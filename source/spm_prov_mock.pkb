@@ -62,6 +62,7 @@ create or replace package body spm_prov_mock as
     function random_walk(p_instrument spm_instrument%rowtype) return clob is
         l_last  number;
         l_price number;
+        l_obj   json_object_t;
     begin
         select max(price) keep (dense_rank last order by quote_ts_utc)
         into   l_last
@@ -72,12 +73,12 @@ create or replace package body spm_prov_mock as
                          * (1 + dbms_random.normal * spm_cfg.get_number('MOCK_VOLATILITY', 0.01)), 4);
         l_price := greatest(l_price, 0.01);
 
-        return json_object(
-                   'symbol'    value p_instrument.provider_symbol,
-                   'price'     value l_price,
-                   'currency'  value p_instrument.currency,
-                   'timestamp' value to_char(cast(spm_prov.utc_now as date), C_TS_FORMAT)
-                   returning clob);
+        l_obj := json_object_t();
+        l_obj.put('symbol',    p_instrument.provider_symbol);
+        l_obj.put('price',     l_price);
+        l_obj.put('currency',  p_instrument.currency);
+        l_obj.put('timestamp', to_char(cast(spm_prov.utc_now as date), C_TS_FORMAT));
+        return l_obj.to_clob;
     end random_walk;
 
     procedure parse_body(p_body clob, p_provider_symbol varchar2, p_quote in out nocopy spm_prov.t_quote) is

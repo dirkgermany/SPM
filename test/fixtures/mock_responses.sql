@@ -4,6 +4,9 @@
 -- Platzhalter: {NOW}, {NOW-<n>M}, {YESTERDAY_NOON} (UTC, ISO 8601)
 -- =============================================================================
 
+-- Antworten enthalten & (URL-Parameter): keine Substitutionsvariablen
+set define off
+
 delete from spm_mock_response where provider_symbol like 'TST%';
 
 insert into spm_mock_response (provider_symbol, seq_no, http_status, simulate_timeout, body, note)
@@ -45,3 +48,5 @@ select provider_symbol, seq_no, http_status, simulate_timeout, body, note from (
 );
 
 commit;
+
+set define on

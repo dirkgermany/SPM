@@ -55,7 +55,7 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 2. **Drosselung je Session (in LILAM gelöst):** Bis LILAM-Commit `1bfd6ec` merkte sich LILAM die Sperre für `throttle_seconds` nur in der Datenbanksession und ohne Context; jeder Scheduler-Lauf hätte erneut gemeldet, und ein Alert für ein Symbol hätte bei Regeln ohne Context andere Symbole gesperrt. Seit `1bfd6ec` liegt die Sperre dauerhaft in `LILAM_ALERT_LOCKS`, Schlüssel Gruppe, Scope bzw. Prozess, Regel, Action und Context. SPM benötigt mindestens diesen Stand; nach LILAM-Änderungen `install/install.sql` erneut ausführen, damit der Body im Schema SPM neu kompiliert wird. Der Vorgänger für `PRECEDED_BY` gilt weiterhin je Session (in SPM nicht verwendet).
 3. **Alert-Details:** `LILAM_ALERTS` speichert weder Messwert noch Schwelle oder Baseline. Die Alert-Seite kann sie über `PROCESS_ID`, `ACTION_NAME`, `CONTEXT_NAME` und `ACTION_COUNT` aus `_MON` (`USED_VALUE`, `USED_VALUE_EWMA`) und aus dem Rule Set ergänzen. Zu verifizieren, sobald ein Alert ausgelöst wurde.
 4. **`TIME_MAX_GAP_SECONDS` über Läufe:** Ob der Abstand zum vorherigen Event auch über Prozessgrenzen gemessen wird (Baseline Scope), ist noch zu prüfen. Unabhängig davon erkennt LILAM einen ausbleibenden Lauf nicht; dafür ist der SPM-Watchdog vorgesehen.
-5. **Regeln je Symbol:** Grenzwerte je Aktie sind Regeln mit `context = Symbol`. SPM wird das Rule Set aus seiner Regelkonfiguration erzeugen, als neue Version in `LILAM_RULES` eintragen und mit `SERVER_UPDATE_RULES` aktivieren. In-Session-Läufe laden es spätestens nach 15 Sekunden.
+5. **Regeln je Symbol (umgesetzt):** Grenzwerte je Aktie sind Regeln mit `context = Symbol`. `spm_rules.publish` erzeugt das Rule Set aus `SPM_RULE` und `SPM_CONFIG`, trägt es als neue Version in `LILAM_RULES` ein und aktiviert es mit `SERVER_UPDATE_RULES`. Ein neuer Scheduler-Lauf (neue Session) lädt es sofort, eine laufende Session spätestens nach 15 Sekunden. Warm-up und Alpha wirken je Action und Context, also je Aktie. Details: [rules/README.md](../rules/README.md).
 
 ## Umsetzungsstand
 
@@ -65,6 +65,6 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 | 2. Integrationsmatrix | dieses Dokument |
 | 3. Provider-Abstraktion, Mock, Schema, manueller Lauf | umgesetzt: `spm_prov`, `spm_prov_mock`, `install/20_tables.sql`, `spm_poll.run` |
 | 4. Lebenszyklus, Trace, Logging, Fehlerabschluss | umgesetzt in `spm_poll` |
-| 5. Regeln gegen die LILAM-Erweiterung | offen: Regelkonfiguration und Rule-Set-Generator |
+| 5. Regeln gegen die LILAM-Erweiterung | umgesetzt: `SPM_RULE`, `spm_rules` (Pflege, Generator, Veröffentlichen), technische Regeln, Demo-Rule-Set |
 | 6. Scheduler, Freshness/Watchdog, APEX | offen |
-| 7. Tests | `test/run_tests.sql` (Mock): 161 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |
+| 7. Tests | `test/run_tests.sql` (Mock): 201 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |

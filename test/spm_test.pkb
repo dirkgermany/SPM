@@ -9,7 +9,14 @@ create or replace package body spm_test as
     C_SYMBOLS constant t_text_tab := t_text_tab(
         'TSTOK', 'TSTSTR', 'TSTDUP', 'TSTH500', 'TSTTMO', 'TSTJSN', 'TSTNOP', 'TSTNAN', 'TSTSYM',
         'TSTCCY', 'TSTOLD', 'TSTFUT', 'TSTNEG', 'TSTKEY', 'TSTM1', 'TSTM2', 'TSTM3', 'TSTQ1', 'TSTQ2',
-        'TSTSYS', 'TSTB');
+        'TSTSYS', 'TSTB', 'TSTR', 'TSTE', 'TSTT');
+
+    -- Tests laufen in eigenen LILAM-Gruppen: echte Regeln greifen nicht, Testregeln und
+    -- Sperren (LILAM_ALERT_LOCKS) sind je Testlauf frisch. Die Regeltests brauchen eine
+    -- zweite Gruppe, da die Session die Regeln einer schon benutzten Gruppe zwischenspeichert.
+    g_group_orig  varchar2(400);
+    g_group_base  varchar2(50);
+    g_group_rules varchar2(50);
 
     ------------------------------------------------------------------------
     -- Prüfungen
@@ -160,8 +167,20 @@ create or replace package body spm_test as
     ------------------------------------------------------------------------
     -- Vorbereitung
     ------------------------------------------------------------------------
-    procedure setup is
+    procedure set_group(p_group varchar2) is
     begin
+        update spm_config set param_value = p_group where param_name = 'LILAM_GROUP';
+        commit;
+    end set_group;
+
+    procedure setup is
+        l_stamp varchar2(20) := to_char(systimestamp, 'YYYYMMDDHH24MISSFF3');
+    begin
+        g_group_orig  := spm_cfg.get_text('LILAM_GROUP');
+        g_group_base  := 'SPMTEST_' || l_stamp || '_A';
+        g_group_rules := 'SPMTEST_' || l_stamp || '_R';
+        set_group(g_group_base);
+
         for i in 1 .. C_SYMBOLS.count loop
             spm_watchlist.save_instrument(p_symbol => C_SYMBOLS(i), p_provider_code => 'MOCK',
                                           p_provider_symbol => C_SYMBOLS(i), p_currency => 'EUR',
@@ -175,15 +194,71 @@ create or replace package body spm_test as
         update spm_instrument
         set    last_fetch_at = null, last_fetch_status = null, last_fetch_message = null
         where  symbol like 'TST%';
+        delete from spm_rule where instrument_id in (select instrument_id from spm_instrument where symbol like 'TST%');
         spm_prov_mock.reset_state;
         commit;
     end setup;
 
     procedure teardown is
     begin
+        set_group(g_group_orig);
+        delete from spm_rule where instrument_id in (select instrument_id from spm_instrument where symbol like 'TST%');
         update spm_instrument set is_active = 'N' where symbol like 'TST%';
+        -- Rule Sets und Sperren der Testgruppen; Alerts und Prozesse bleiben zur Analyse
+        delete from lilam_rules where upper(group_name) like 'SPMTEST\_%' escape '\';
+        delete from lilam_alert_locks where lock_key like 'SPMTEST\_%' escape '\';
         commit;
     end teardown;
+
+    function alert_count(p_pid number, p_rule_id varchar2) return number is
+        l_count number;
+    begin
+        select count(*) into l_count from lilam_alerts where process_id = p_pid and rule_id = p_rule_id;
+        return l_count;
+    end alert_count;
+
+    -- Abruflauf in eigener Session über DBMS_SCHEDULER (wie der spätere Scheduler-Job)
+    function run_in_job(p_symbol_like varchar2) return spm_run%rowtype is
+        l_before number;
+        l_run    spm_run%rowtype;
+    begin
+        select nvl(max(run_id), 0) into l_before from spm_run;
+        dbms_scheduler.create_job(
+            job_name   => 'SPM_TEST_JOB_' || to_char(systimestamp, 'HH24MISSFF3'),
+            job_type   => 'PLSQL_BLOCK',
+            job_action => 'begin spm_poll.run(''TEST'', ''' || replace(p_symbol_like, '''', '''''') || '''); end;',
+            enabled    => true,
+            auto_drop  => true);
+        for i in 1 .. 60 loop
+            begin
+                select * into l_run from spm_run
+                where  run_id > l_before and trigger_type = 'TEST' and symbol_filter = p_symbol_like
+                and    status <> 'RUNNING'
+                fetch  first 1 row only;
+                return l_run;
+            exception
+                when no_data_found then
+                    dbms_session.sleep(1);
+            end;
+        end loop;
+        raise_application_error(-20901, 'Scheduler-Testlauf nicht innerhalb von 60 s beendet');
+    end run_in_job;
+
+    function rule_value(p_set clob, p_rule_id varchar2) return varchar2 is
+        l_value varchar2(100);
+    begin
+        select json_value(p_set, '$.rules[*]?(@.id == $id).condition.value' passing p_rule_id as "id")
+        into   l_value from dual;
+        return l_value;
+    end rule_value;
+
+    function has_rule(p_set clob, p_rule_id varchar2) return boolean is
+        l_count number;
+    begin
+        select count(*) into l_count from dual
+        where  json_exists(p_set, '$.rules[*]?(@.id == $id)' passing p_rule_id as "id");
+        return l_count = 1;
+    end has_rule;
 
     ------------------------------------------------------------------------
     -- Testfälle
@@ -366,6 +441,125 @@ create or replace package body spm_test as
         end if;
     end t_baseline;
 
+    procedure t_rules is
+        r      spm_run%rowtype;
+        l_set  clob;
+        l_code number;
+        l_v1   number;
+        l_v2   number;
+        l_v3   number;
+        l_act  number;
+        type t_num_tab is table of number index by pls_integer;
+        l_up   t_num_tab;
+        l_down t_num_tab;
+    begin
+        start_case('Regeln: Eingaben werden geprüft');
+        begin spm_rules.save_rule('TSTR', p_val_min => 10, p_val_max => 5); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'Untergrenze >= Obergrenze');
+        begin spm_rules.save_rule('TSTE', p_ewma_pct_up => -1); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'negative Prozentabweichung');
+        begin spm_rules.save_rule('TSTE', p_ewma_pct_up => 5, p_ewma_alpha => 2); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'Alpha > 1');
+        begin spm_rules.save_rule('TSTE', p_ewma_pct_up => 5, p_ewma_warmup => 0.5); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'Warm-up keine ganze Zahl');
+        begin spm_rules.save_rule('TSTE', p_ewma_warmup => 3); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'Warm-up ohne EWMA-Abweichung');
+        begin spm_rules.save_rule('TSTR', p_val_max => 1, p_severity_limit => 'LAUT'); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'unbekannte Severity');
+        begin spm_rules.save_rule('NOSUCH', p_val_max => 1); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_rules.C_ERR_RULE, l_code, 'Symbol nicht in der Watchlist');
+
+        start_case('Regeln: Rule Set erzeugen');
+        set_group(g_group_rules);
+        spm_rules.save_rule('TSTR', p_val_min => 10, p_val_max => 100, p_throttle_seconds => 0);
+        spm_rules.save_rule('TSTE', p_ewma_pct_up => 5, p_ewma_pct_down => 5, p_ewma_warmup => 3,
+                            p_ewma_alpha => 0.1, p_throttle_seconds => 0);
+        spm_rules.save_rule('TSTT', p_val_max => 100, p_throttle_seconds => 3600);
+        -- Regel eines inaktiven Instruments darf nicht im Rule Set stehen
+        spm_rules.save_rule('TSTOK', p_val_max => 1);
+        spm_watchlist.set_active('TSTOK', 'N');
+        commit;
+        l_set := spm_rules.build_rule_set;
+        ok(lilam.check_rule_set(l_set) is null, 'LILAM.CHECK_RULE_SET: ' || lilam.check_rule_set(l_set));
+        eq('100', rule_value(l_set, 'TSTR-MAX'), 'TSTR-MAX');
+        eq('10', rule_value(l_set, 'TSTR-MIN'), 'TSTR-MIN');
+        eq('5|3|0.1', rule_value(l_set, 'TSTE-UP'), 'TSTE-UP');
+        eq('5|3|0.1', rule_value(l_set, 'TSTE-DOWN'), 'TSTE-DOWN');
+        ok(not has_rule(l_set, 'TSTE-MIN'), 'keine Regel ohne Wert');
+        ok(not has_rule(l_set, 'TSTOK-MAX'), 'keine Regel für inaktives Instrument');
+        eq('-1', rule_value(l_set, 'SPM-RUN-FAILED'), 'technische Regel SPM-RUN-FAILED');
+        eq('0', rule_value(l_set, 'SPM-POLL-FAILED'), 'technische Regel SPM-POLL-FAILED');
+        spm_watchlist.set_active('TSTOK', 'Y');
+        spm_rules.delete_rule('TSTOK');
+        commit;
+
+        start_case('Regeln: veröffentlichen und versionieren');
+        l_v1 := spm_rules.publish('SPM_TEST');
+        l_v2 := spm_rules.publish('SPM_TEST');
+        eq(l_v1, l_v2, 'unverändert: keine neue Version');
+        spm_rules.save_rule('TSTR', p_val_min => 10, p_val_max => 101, p_throttle_seconds => 0);
+        commit;
+        l_v3 := spm_rules.publish('SPM_TEST');
+        eq(l_v1 + 1, l_v3, 'geändert: neue Version');
+        spm_rules.save_rule('TSTR', p_val_min => 10, p_val_max => 100, p_throttle_seconds => 0);
+        commit;
+        l_v3 := spm_rules.publish('SPM_TEST');
+        eq(l_v1 + 2, l_v3, 'zurückgeändert: neue Version');
+        select max(version) into l_act from lilam_rules where group_name = g_group_rules and is_active = 1;
+        eq(l_v3, l_act, 'aktive Version in LILAM_RULES');
+
+        start_case('Regeln: VAL_MAX und VAL_MIN lösen aus');
+        r := run_test('TSTR');                         -- 150
+        eq(1, alert_count(r.lilam_process_id, 'TSTR-MAX'), 'Lauf 1 TSTR-MAX');
+        eq(0, alert_count(r.lilam_process_id, 'TSTR-MIN'), 'Lauf 1 TSTR-MIN');
+        select count(*) into l_act from lilam_alerts
+        where  process_id = r.lilam_process_id and rule_id = 'TSTR-MAX'
+        and    context_name = 'TSTR' and group_name = g_group_rules;
+        eq(1, l_act, 'Alert mit Context und Gruppe');
+        r := run_test('TSTR');                         -- 5
+        eq(1, alert_count(r.lilam_process_id, 'TSTR-MIN'), 'Lauf 2 TSTR-MIN');
+        eq(0, alert_count(r.lilam_process_id, 'TSTR-MAX'), 'Lauf 2 TSTR-MAX');
+        r := run_test('TSTR');                         -- 50
+        eq(0, alert_count(r.lilam_process_id, 'TSTR-MIN') + alert_count(r.lilam_process_id, 'TSTR-MAX'),
+           'Lauf 3 im Band');
+
+        start_case('Regeln: EWMA-Ausreißer nach oben und unten');
+        for i in 1 .. 5 loop                           -- 100, 100, 100, 120, 80
+            r := run_test('TSTE');
+            l_up(i)   := alert_count(r.lilam_process_id, 'TSTE-UP');
+            l_down(i) := alert_count(r.lilam_process_id, 'TSTE-DOWN');
+        end loop;
+        eq(0, l_up(1) + l_up(2) + l_up(3) + l_down(1) + l_down(2) + l_down(3), 'Läufe 1-3 ohne Alert');
+        eq(1, l_up(4), 'Lauf 4 TSTE-UP');
+        eq(0, l_down(4), 'Lauf 4 TSTE-DOWN');
+        eq(1, l_down(5), 'Lauf 5 TSTE-DOWN');
+        eq(0, l_up(5), 'Lauf 5 TSTE-UP');
+
+        start_case('Regeln: Drosselung gilt für einen Scheduler-Lauf in anderer Session');
+        r := run_test('TSTT');                         -- 150
+        eq(1, alert_count(r.lilam_process_id, 'TSTT-MAX'), 'Lauf 1 TSTT-MAX');
+        r := run_in_job('TSTT');                       -- 160
+        eq('SUCCESS', r.status, 'Scheduler-Lauf Status');
+        eq(1, r.cnt_stored, 'Scheduler-Lauf gespeichert');
+        eq(160, mon_value(r.lilam_process_id, spm_poll.C_ACT_SHARE_PRICE, 'TSTT'), 'Wert im Scheduler-Lauf');
+        eq(0, alert_count(r.lilam_process_id, 'TSTT-MAX'), 'Scheduler-Lauf gedrosselt');
+
+        start_case('Regeln: technische Regeln');
+        r := run_test('TSTH500');
+        eq(1, alert_count(r.lilam_process_id, 'SPM-RUN-FAILED'), 'SPM-RUN-FAILED');
+        eq(1, alert_count(r.lilam_process_id, 'SPM-POLL-FAILED'), 'SPM-POLL-FAILED');
+        r := run_test('TSTM%');
+        eq(1, alert_count(r.lilam_process_id, 'SPM-RUN-PARTIAL'), 'SPM-RUN-PARTIAL');
+        eq(0, alert_count(r.lilam_process_id, 'SPM-RUN-FAILED'), 'kein SPM-RUN-FAILED bei Teilerfolg');
+    end t_rules;
+
     ------------------------------------------------------------------------
     procedure run_all is
     begin
@@ -381,6 +575,7 @@ create or replace package body spm_test as
         begin t_systemic;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_lock;      exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_baseline;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
+        begin t_rules;     exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
 
         teardown;
         dbms_output.put_line('');

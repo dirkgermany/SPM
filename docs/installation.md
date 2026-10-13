@@ -39,7 +39,7 @@ Installation mit dem Pfad zum LILAM-Checkout. SPM benötigt den LILAM-Stand mit 
 
 Ablauf: LILAM-Pakete kompilieren und Life Check (`install/10_lilam.sql`), Tabellen (`20_tables.sql`), SPM-Pakete (`30_packages.sql`), Grunddaten (`40_seed.sql`). Die Installation ist wiederholbar.
 
-Optional eine Demo-Watchlist mit simulierten Kursen:
+Optional eine Demo-Watchlist mit simulierten Kursen und Beispielregeln (veröffentlicht das Rule Set):
 
 ```sql
 @install/50_demo_data.sql
@@ -76,3 +76,17 @@ select * from spm_run order by run_id desc fetch first 5 rows only;
 ```
 
 LILAM entfernt `<LILAM>/source/uninstall.sql`, das Schema ein Administrator mit `DROP USER SPM CASCADE`.
+
+## Regeln veröffentlichen
+
+Nach Änderungen an `SPM_RULE` oder den `RULE_*`-Werten in `SPM_CONFIG`:
+
+```sql
+exec spm_rules.publish
+```
+
+Details: [rules/README.md](../rules/README.md).
+
+## LILAM aktualisieren
+
+SPM installiert LILAM in das eigene Schema. Nach einer Änderung im LILAM-Checkout `install/install.sql` erneut ausführen, damit der Body im Schema SPM neu kompiliert wird. Skripte mit `WHENEVER`/`EXIT` über die SQLcl-Kommandozeile ausführen, nicht über einen SQLcl-MCP-Server: `EXIT` beendet dessen Skript-Engine.

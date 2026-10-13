@@ -34,7 +34,9 @@ aber nicht nach und verändert LILAM nicht.
 - Anwendungsschema, Mock-Provider und manueller Abruflauf (`spm_poll.run`) mit LILAM-Instrumentierung:
   ein In-Session-Prozess je Lauf, Trace je Provider-Aufruf, Kurs als `MARK_EVENT(p_value)`.
 - Automatisierte Tests mit Mock-Antworten (`test/run_tests.sql`).
-- Offen: Regelkonfiguration und Rule-Set-Generator, Scheduler und Watchdog, APEX-Anwendung,
+- Regeln je Aktie (Grenzen, EWMA-Ausreißer) und technische Regeln: `spm_rules` erzeugt und aktiviert das LILAM Rule Set,
+  siehe [rules/README.md](rules/README.md).
+- Offen: Scheduler und Watchdog, Alert-Consumer, APEX-Anwendung,
   REST-Adapter für einen echten Provider.
 
 Dokumentation: [Installation](docs/installation.md), [Integrationsmatrix](docs/integrationsmatrix.md).

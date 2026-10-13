@@ -1,0 +1,240 @@
+{
+  "header" :
+  {
+    "rule_set" : "SPM_RULES",
+    "description" : "Erzeugt von SPM aus SPM_RULE und SPM_CONFIG (RULE_*). Nicht von Hand ändern."
+  },
+  "rules" :
+  [
+    {
+      "id" : "SPM-RUN-FAILED",
+      "_comment" : "Abruflauf fehlgeschlagen (Status -1)",
+      "trigger_type" : "PROCESS_STOP",
+      "action" : "SPM_POLL",
+      "condition" :
+      {
+        "operator" : "STATUS_EQUALS",
+        "value" : "-1"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-RUN-PARTIAL",
+      "_comment" : "Abruflauf teilweise erfolgreich (Status 2)",
+      "trigger_type" : "PROCESS_STOP",
+      "action" : "SPM_POLL",
+      "condition" :
+      {
+        "operator" : "STATUS_EQUALS",
+        "value" : "2"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-RUN-SLOW",
+      "_comment" : "Abruflauf dauert zu lange (ms)",
+      "trigger_type" : "PROCESS_STOP",
+      "action" : "SPM_POLL",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_RUNTIME_EXCEEDED",
+        "value" : "300000"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-PROVIDER-SLOW",
+      "_comment" : "Provider-Aufruf dauert zu lange (ms)",
+      "trigger_type" : "TRACE_STOP",
+      "action" : "PROVIDER_CALL",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_DURATION_MS",
+        "value" : "10000"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-POLL-FAILED",
+      "_comment" : "Zu viele fehlerhafte Symbole in einem Lauf",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "POLL_RESULT",
+      "context" : "FAILED",
+      "condition" :
+      {
+        "operator" : "VAL_MAX",
+        "value" : "0"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "AAPL-UP",
+      "_comment" : "Kurs mehr als 2.5 % über dem EWMA",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "AAPL",
+      "condition" :
+      {
+        "operator" : "VAL_EWMA_DEVIATION_PCT_UP",
+        "value" : "2.5"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "AAPL-DOWN",
+      "_comment" : "Kurs mehr als 2.5 % unter dem EWMA",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "AAPL",
+      "condition" :
+      {
+        "operator" : "VAL_EWMA_DEVIATION_PCT_DOWN",
+        "value" : "2.5"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SAP-MIN",
+      "_comment" : "Kurs unter 80 EUR",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SAP",
+      "condition" :
+      {
+        "operator" : "VAL_MIN",
+        "value" : "80"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SAP-MAX",
+      "_comment" : "Kurs über 120 EUR",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SAP",
+      "condition" :
+      {
+        "operator" : "VAL_MAX",
+        "value" : "120"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SAP-UP",
+      "_comment" : "Kurs mehr als 3 % über dem EWMA",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SAP",
+      "condition" :
+      {
+        "operator" : "VAL_EWMA_DEVIATION_PCT_UP",
+        "value" : "3|5|0.2"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SAP-DOWN",
+      "_comment" : "Kurs mehr als 3 % unter dem EWMA",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SAP",
+      "condition" :
+      {
+        "operator" : "VAL_EWMA_DEVIATION_PCT_DOWN",
+        "value" : "3|5|0.2"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SIE-MIN",
+      "_comment" : "Kurs unter 85 EUR",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SIE",
+      "condition" :
+      {
+        "operator" : "VAL_MIN",
+        "value" : "85"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SIE-MAX",
+      "_comment" : "Kurs über 115 EUR",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SIE",
+      "condition" :
+      {
+        "operator" : "VAL_MAX",
+        "value" : "115"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    }
+  ]
+}

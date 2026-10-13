@@ -2,8 +2,10 @@
 -- SPM: Schema anlegen (einmalig, als Administrator)
 --
 -- Aufruf (SQLcl / SQL*Plus), angemeldet als SYS AS SYSDBA (oder ein Benutzer mit
--- CREATE USER und GRANT-Recht auf die SYS-Pakete) in der PDB, z. B.:
+-- CREATE USER und GRANT-Recht auf die SYS-Pakete), z. B.:
 --   sql sys@localhost:1521/FREEPDB1 as sysdba
+-- Ist die Sitzung im CDB-Root (z. B. "sql / as sysdba"), wechselt das Skript in die
+-- PDB SPM_PDB (Standard FREEPDB1).
 --   @install/00_admin_create_schema.sql
 --
 -- Das Kennwort wird abgefragt und nicht gespeichert. Das Skript ist wiederholbar:
@@ -14,9 +16,28 @@ set verify off
 set serveroutput on
 whenever sqlerror exit failure
 
--- Schemaname und Tablespace bei Bedarf hier anpassen
+-- Schemaname, Tablespace und PDB bei Bedarf hier anpassen
 define SPM_USER       = SPM
 define SPM_TABLESPACE = USERS
+define SPM_PDB        = FREEPDB1
+
+-- Im CDB-Root in die PDB wechseln; dort wäre nur ein allgemeiner Benutzer C##... möglich (ORA-65096)
+column spm_switch new_value SPM_SWITCH noprint
+select case when sys_context('USERENV', 'CON_NAME') = 'CDB$ROOT'
+            then 'alter session set container = &SPM_PDB'
+            else 'select null from dual'
+       end spm_switch
+from   dual;
+&SPM_SWITCH
+/
+
+begin
+    if sys_context('USERENV', 'CON_NAME') = 'CDB$ROOT' then
+        raise_application_error(-20000, 'Das Skript muss in der PDB &SPM_PDB laufen, nicht im CDB-Root.');
+    end if;
+    dbms_output.put_line('Container: ' || sys_context('USERENV', 'CON_NAME'));
+end;
+/
 
 accept SPM_PASSWORD char prompt 'Kennwort für &SPM_USER (wird nicht angezeigt): ' hide
 

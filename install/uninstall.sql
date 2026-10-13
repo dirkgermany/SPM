@@ -24,12 +24,19 @@ declare
             end if;
     end drop_object;
 begin
+    -- Abruf-Jobs zuerst, sonst laufen sie gegen fehlende Pakete
+    for j in (select job_name from user_scheduler_jobs where job_name like 'SPM\_%' escape '\') loop
+        dbms_scheduler.drop_job(j.job_name, force => true);
+        dbms_output.put_line('Entfernt: job ' || j.job_name);
+    end loop;
+
     for p in (select column_value name from table(sys.odcivarchar2list(
-                  'SPM_TEST', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
+                  'SPM_TEST', 'SPM_JOB', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
         drop_object('package', p.name);
     end loop;
 
     if '&SPM_DROP_DATA' = 'J' then
+        drop_object('view', 'SPM_JOB_STATUS_V');
         for t in (select column_value name from table(sys.odcivarchar2list(
                       'SPM_RULE', 'SPM_PRICE', 'SPM_RUN', 'SPM_INSTRUMENT', 'SPM_PROVIDER', 'SPM_CONFIG',
                       'SPM_MOCK_RESPONSE', 'SPM_MOCK_STATE'))) loop

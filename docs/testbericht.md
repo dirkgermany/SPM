@@ -37,3 +37,17 @@ Umgebung wie oben; LILAM-Checkout `messwerte` mit `1bfd6ec` (dauerhafte Drosselu
 Neue Fälle: Eingabeprüfung der Regelpflege (Grenzen, Prozent, Alpha, Warm-up, Severity, unbekanntes Symbol), erzeugtes Rule Set (Werte, keine Regel für inaktive Instrumente, technische Regeln, `CHECK_RULE_SET`), Versionierung (unverändert keine neue Version), `VAL_MAX`/`VAL_MIN` mit Context und Gruppe im Alert, EWMA-Ausreißer nach oben und unten nach dem Warm-up, Drosselung über einen Abruflauf in eigener Session (`DBMS_SCHEDULER`-Job), technische Regeln bei Fehlschlag und Teilerfolg.
 
 Die Tests laufen in eigenen LILAM-Gruppen (`SPMTEST_<Zeitstempel>_A` bzw. `_R`), damit echte Regeln nicht greifen und Testalerts keine echten Sperren setzen. Die Regeltests brauchen eine zweite Gruppe, weil eine Session die Regeln einer bereits benutzten Gruppe bis zu 15 Sekunden zwischenspeichert.
+
+## 2026-10-14: Scheduler-Job
+
+| Schritt | Ergebnis |
+| --- | --- |
+| `install/install.sql` mit `spm_job`, `SPM_JOB_STATUS_V` | fehlerfrei |
+| `test/run_tests.sql`, Lauf 1 | 226 bestanden, 0 fehlgeschlagen |
+| Befund | Die Sicht zeigte als letzten Lauf den Testlauf mit simuliertem Fehler. Behoben: Die Sicht berücksichtigt nur Läufe über die ganze Watchlist (ohne Symbolfilter) |
+| `test/run_tests.sql`, Lauf 2 | 226 bestanden, 0 fehlgeschlagen |
+| Nachkontrolle | kein `SPM_*`-Job übrig, `POLL_JOB_NAME` und `LILAM_GROUP` zurückgesetzt; Job-Historie des Testjobs: `SUCCEEDED/0`, `FAILED/20110` |
+
+Neue Fälle: Eingabeprüfung (Intervall, Job-Name, fehlender Job), Anlegen und Ändern ohne Einschalten, echter Lauf über `DBMS_SCHEDULER.RUN_JOB` in eigener Session (`SUCCEEDED`, Abruflauf `SUCCESS`, LILAM-Prozess geschlossen), systemischer Fehler im Job (Historie `FAILED` mit 20110, Abruflauf `FAILED`, LILAM-Prozess mit Status −1 geschlossen), Statussicht mit und ohne Job, Entfernen.
+
+Nicht getestet: ein eingeschalteter Job im Zeitplan über mehrere Intervalle (Dauerbetrieb nur auf Anforderung).

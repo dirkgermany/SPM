@@ -66,5 +66,5 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 | 3. Provider-Abstraktion, Mock, Schema, manueller Lauf | umgesetzt: `spm_prov`, `spm_prov_mock`, `install/20_tables.sql`, `spm_poll.run` |
 | 4. Lebenszyklus, Trace, Logging, Fehlerabschluss | umgesetzt in `spm_poll` |
 | 5. Regeln gegen die LILAM-Erweiterung | umgesetzt: `SPM_RULE`, `spm_rules` (Pflege, Generator, Veröffentlichen), technische Regeln, Demo-Rule-Set |
-| 6. Scheduler, Freshness/Watchdog, APEX | offen |
-| 7. Tests | `test/run_tests.sql` (Mock): 201 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |
+| 6. Scheduler, Freshness/Watchdog, APEX | Scheduler umgesetzt (`spm_job`, `SPM_JOB_STATUS_V`); Watchdog wartet auf die LILAM-Erkennung ausbleibender Signale (`03_lilam_ausbleib_erkennung.md`); APEX offen |
+| 7. Tests | `test/run_tests.sql` (Mock): 226 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |

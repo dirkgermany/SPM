@@ -13,6 +13,9 @@ using (
     select 'MAX_QUOTE_AGE_MINUTES',    '4320',                'Ältere Quotes werden als STALE verworfen (Wochenende: 3 Tage)' from dual union all
     select 'MAX_FUTURE_SKEW_SECONDS',  '300',                 'Zulässige Abweichung eines Quote-Zeitstempels in die Zukunft' from dual union all
     select 'MOCK_VOLATILITY',          '0.01',                'Mock ohne vorbereitete Antwort: Standardabweichung je Abruf (Zufallsbewegung)' from dual union all
+    -- Scheduler-Job (SPM_JOB)
+    select 'POLL_JOB_NAME',            'SPM_POLL_JOB',        'Name des DBMS_SCHEDULER-Jobs für den Kursabruf' from dual union all
+    select 'POLL_INTERVAL_MINUTES',    '15',                  'Abrufintervall des Jobs in Minuten (1 bis 1440); Provider-Limits beachten' from dual union all
     -- Rule Set (SPM_RULES.PUBLISH)
     select 'RULE_SET_NAME',            'SPM_RULES',           'Name des LILAM Rule Sets (LILAM_RULES.SET_NAME, max. 30 Zeichen)' from dual union all
     select 'RULE_HANDLER',             'SPM_ALERT',           'DBMS_ALERT-Kanal der Alerts (max. 30 Zeichen)' from dual union all

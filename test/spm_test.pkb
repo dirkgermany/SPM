@@ -18,6 +18,10 @@ create or replace package body spm_test as
     g_group_base  varchar2(50);
     g_group_rules varchar2(50);
 
+    -- Job-Test: eigener Job-Name, die Sicht SPM_JOB_STATUS_V zeigt ihn während des Tests
+    C_TEST_JOB constant varchar2(30) := 'SPM_TEST_POLL_JOB';
+    g_job_orig     varchar2(400);
+
     ------------------------------------------------------------------------
     -- Prüfungen
     ------------------------------------------------------------------------
@@ -189,8 +193,8 @@ create or replace package body spm_test as
 
         delete from spm_price
         where  instrument_id in (select instrument_id from spm_instrument where symbol like 'TST%')
-        or     run_id in (select run_id from spm_run where trigger_type = 'TEST');
-        delete from spm_run where trigger_type = 'TEST';
+        or     run_id in (select run_id from spm_run where trigger_type = 'TEST' or symbol_filter like 'TST%');
+        delete from spm_run where trigger_type = 'TEST' or symbol_filter like 'TST%';
         update spm_instrument
         set    last_fetch_at = null, last_fetch_status = null, last_fetch_message = null
         where  symbol like 'TST%';
@@ -202,6 +206,10 @@ create or replace package body spm_test as
     procedure teardown is
     begin
         set_group(g_group_orig);
+        spm_job.drop_job(C_TEST_JOB);
+        if g_job_orig is not null then
+            update spm_config set param_value = g_job_orig where param_name = 'POLL_JOB_NAME';
+        end if;
         delete from spm_rule where instrument_id in (select instrument_id from spm_instrument where symbol like 'TST%');
         update spm_instrument set is_active = 'N' where symbol like 'TST%';
         -- Rule Sets und Sperren der Testgruppen; Alerts und Prozesse bleiben zur Analyse
@@ -560,6 +568,110 @@ create or replace package body spm_test as
         eq(0, alert_count(r.lilam_process_id, 'SPM-RUN-FAILED'), 'kein SPM-RUN-FAILED bei Teilerfolg');
     end t_rules;
 
+    -- Job sofort starten und auf den Eintrag in der Job-Historie warten
+    procedure run_job_and_wait(o_status out varchar2, o_error out number) is
+        l_before number;
+    begin
+        select nvl(max(log_id), 0) into l_before from user_scheduler_job_run_details;
+        spm_job.run_now(C_TEST_JOB);
+        for i in 1 .. 60 loop
+            begin
+                select status, error# into o_status, o_error
+                from   user_scheduler_job_run_details
+                where  job_name = C_TEST_JOB and log_id > l_before
+                order  by log_id desc fetch first 1 row only;
+                return;
+            exception
+                when no_data_found then
+                    dbms_session.sleep(1);
+            end;
+        end loop;
+        raise_application_error(-20902, 'Job ' || C_TEST_JOB || ' nicht innerhalb von 60 s beendet');
+    end run_job_and_wait;
+
+    function last_run_of(p_trigger varchar2, p_symbol_like varchar2) return spm_run%rowtype is
+        l_run spm_run%rowtype;
+    begin
+        select * into l_run from spm_run
+        where  trigger_type = p_trigger and symbol_filter = p_symbol_like
+        order  by run_id desc fetch first 1 row only;
+        return l_run;
+    end last_run_of;
+
+    procedure t_job is
+        l_code    number;
+        l_status  varchar2(30);
+        l_error   number;
+        l_enabled varchar2(5);
+        l_repeat  varchar2(4000);
+        l_count   number;
+        r         spm_run%rowtype;
+        v         spm_job_status_v%rowtype;
+    begin
+        start_case('Job: Eingaben werden geprüft');
+        begin spm_job.create_job(p_interval_minutes => 0, p_job_name => C_TEST_JOB); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_job.C_ERR_JOB, l_code, 'Intervall 0');
+        begin spm_job.create_job(p_interval_minutes => 1.5, p_job_name => C_TEST_JOB); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_job.C_ERR_JOB, l_code, 'Intervall keine ganze Zahl');
+        begin spm_job.create_job(p_job_name => 'X;DROP'); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_job.C_ERR_JOB, l_code, 'ungültiger Job-Name');
+        begin spm_job.enable_job(C_TEST_JOB); l_code := 0;
+        exception when others then l_code := sqlcode; end;
+        eq(spm_job.C_ERR_JOB, l_code, 'Einschalten eines fehlenden Jobs');
+
+        start_case('Job: anlegen und ändern, ohne einzuschalten');
+        spm_job.create_job(p_interval_minutes => 1440, p_job_name => C_TEST_JOB, p_symbol_like => 'TSTOK');
+        select enabled, repeat_interval into l_enabled, l_repeat from user_scheduler_jobs where job_name = C_TEST_JOB;
+        eq('FALSE', l_enabled, 'nicht eingeschaltet');
+        eq('FREQ=MINUTELY;INTERVAL=1440', l_repeat, 'Intervall');
+        spm_job.create_job(p_interval_minutes => 720, p_job_name => C_TEST_JOB, p_symbol_like => 'TSTOK');
+        select enabled, repeat_interval into l_enabled, l_repeat from user_scheduler_jobs where job_name = C_TEST_JOB;
+        eq('FREQ=MINUTELY;INTERVAL=720', l_repeat, 'Intervall geändert');
+        eq('FALSE', l_enabled, 'weiterhin nicht eingeschaltet');
+
+        start_case('Job: Lauf in der Scheduler-Session');
+        run_job_and_wait(l_status, l_error);
+        eq('SUCCEEDED', l_status, 'Status in der Job-Historie');
+        r := last_run_of('SCHEDULER', 'TSTOK');
+        eq('SUCCESS', r.status, 'Abruflauf');
+        eq(1, r.cnt_stored, 'gespeichert');
+        eq(spm_poll.C_STATUS_SUCCESS, proc_status(r.lilam_process_id), 'LILAM-Prozessstatus');
+        ok(proc_closed(r.lilam_process_id), 'LILAM-Prozess geschlossen');
+
+        start_case('Job: systemischer Fehler wird vom Scheduler als FAILED verbucht');
+        spm_job.create_job(p_interval_minutes => 1440, p_job_name => C_TEST_JOB, p_symbol_like => 'TSTSYS');
+        run_job_and_wait(l_status, l_error);
+        eq('FAILED', l_status, 'Status in der Job-Historie');
+        eq(-spm_poll.C_ERR_SYSTEMIC, l_error, 'Fehlernummer in der Job-Historie');
+        r := last_run_of('SCHEDULER', 'TSTSYS');
+        eq('FAILED', r.status, 'Abruflauf');
+        eq(spm_poll.C_STATUS_FAILED, proc_status(r.lilam_process_id), 'LILAM-Prozessstatus');
+        ok(proc_closed(r.lilam_process_id), 'LILAM-Prozess geschlossen');
+
+        start_case('Job: Statussicht');
+        g_job_orig := spm_cfg.get_text('POLL_JOB_NAME');
+        update spm_config set param_value = C_TEST_JOB where param_name = 'POLL_JOB_NAME';
+        commit;
+        select * into v from spm_job_status_v;
+        eq(C_TEST_JOB, v.job_name, 'Job-Name');
+        eq('Y', v.job_exists, 'Job vorhanden');
+        eq('FALSE', v.enabled, 'nicht eingeschaltet');
+        eq('FAILED', v.last_job_status, 'letzter Job-Status');
+        eq(-spm_poll.C_ERR_SYSTEMIC, v.last_job_error, 'letzter Job-Fehler');
+
+        start_case('Job: entfernen');
+        spm_job.drop_job(C_TEST_JOB);
+        select count(*) into l_count from user_scheduler_jobs where job_name = C_TEST_JOB;
+        eq(0, l_count, 'Job entfernt');
+        select * into v from spm_job_status_v;
+        eq('N', v.job_exists, 'Sicht ohne Job');
+        update spm_config set param_value = g_job_orig where param_name = 'POLL_JOB_NAME';
+        commit;
+    end t_job;
+
     ------------------------------------------------------------------------
     procedure run_all is
     begin
@@ -576,6 +688,7 @@ create or replace package body spm_test as
         begin t_lock;      exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_baseline;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_rules;     exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
+        begin t_job;       exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
 
         teardown;
         dbms_output.put_line('');

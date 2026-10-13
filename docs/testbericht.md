@@ -14,6 +14,8 @@ Umgebung: Oracle Database 23.26 (26ai Free), PDB `FREEPDB1`, Schema `SPM`; LILAM
 | `LILAM_LOG_INTERNAL` | nicht vorhanden, d. h. LILAM hat keinen internen Fehler protokolliert |
 | Maskierung | `apikey=SECRET123` erscheint als `apikey=***` in `SPM_INSTRUMENT.LAST_FETCH_MESSAGE`, nicht im LILAM-Log |
 
+Nachtrag: LILAM mit dauerhafter Alert-Drosselung (`1bfd6ec`, Checkout-Stand `7f1f81b`) per `install/install.sql` neu installiert; Body enthält `LILAM_ALERT_LOCKS`, Tabelle angelegt. Tests danach erneut: 161 bestanden, 0 fehlgeschlagen. Die Drosselung selbst testet SPM noch nicht (noch kein Rule Set, folgt mit Schritt 5).
+
 Abgedeckte Fälle: Erfolg (Zahl und Text), Idempotenz, HTTP-Fehler, Timeout, ungültiges JSON, fehlender/nicht numerischer Kurs, falsches Symbol, falsche Währung, zu alter und künftiger Zeitstempel, negativer Kurs, Geheimnis in Fehlerantwort, gemischter Lauf (ein Symbol scheitert), getrennte Reihen je Symbol, Quotenlimit, systemischer Fehler mit erneuter Ausnahme und geschlossenem Prozess, freie Sperre nach Abbruch, leere Auswahl, Überlappung, Wert-EWMA über drei Läufe.
 
 Nicht getestet: Datenbankfehler beim Speichern (kein Einspeisungspunkt ohne Testhaken), Läufe aus zwei parallelen Sessions (Überlappung wird mit einer Sperre in derselben Session simuliert), Regeln und Alerts (noch kein Rule Set), Scheduler, APEX, echter Provider.

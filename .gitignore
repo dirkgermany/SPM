@@ -1,0 +1,15 @@
+# Lokale Geheimnisse und Umgebungswerte – nie einchecken
+*.local.sql
+*.secret
+secrets/
+wallet/
+*.sso
+*.p12
+
+# Werkzeuge / Betriebssystem
+*.log
+*.bak
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

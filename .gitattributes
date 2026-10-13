@@ -1,0 +1,5 @@
+* text=auto
+*.sql text eol=crlf
+*.pks text eol=crlf
+*.pkb text eol=crlf
+*.md  text eol=lf

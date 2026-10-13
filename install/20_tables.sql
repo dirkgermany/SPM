@@ -90,6 +90,32 @@ create table if not exists spm_price (
 
 create index if not exists spm_price_run_ix on spm_price (run_id);
 
+-- Regelkonfiguration je Instrument; daraus erzeugt SPM_RULES das LILAM Rule Set.
+-- NULL = Regel entfällt. EWMA: Abweichung in Prozent vom gleitenden Mittel (nach oben/unten);
+-- Warm-up und Alpha gelten für die Wertreihe des Symbols (NULL = LILAM-Standard 3 bzw. 0,1).
+create table if not exists spm_rule (
+    instrument_id     number       not null,
+    val_min           number,
+    val_max           number,
+    ewma_pct_up       number,
+    ewma_pct_down     number,
+    ewma_warmup       number,
+    ewma_alpha        number,
+    severity_limit    varchar2(30) default 'ERROR' not null,
+    severity_ewma     varchar2(30) default 'WARN'  not null,
+    throttle_seconds  number       default 3600    not null,
+    is_active         varchar2(1)  default 'Y'     not null,
+    updated_at        timestamp with time zone default systimestamp not null,
+    constraint spm_rule_pk primary key (instrument_id),
+    constraint spm_rule_instrument_fk foreign key (instrument_id) references spm_instrument (instrument_id),
+    constraint spm_rule_minmax_chk check (val_min is null or val_max is null or val_min < val_max),
+    constraint spm_rule_pct_chk check ((ewma_pct_up is null or ewma_pct_up > 0) and (ewma_pct_down is null or ewma_pct_down > 0)),
+    constraint spm_rule_warmup_chk check (ewma_warmup is null or (ewma_warmup >= 1 and ewma_warmup = trunc(ewma_warmup))),
+    constraint spm_rule_alpha_chk check (ewma_alpha is null or (ewma_alpha > 0 and ewma_alpha <= 1)),
+    constraint spm_rule_throttle_chk check (throttle_seconds >= 0),
+    constraint spm_rule_active_chk check (is_active in ('Y', 'N'))
+);
+
 -- Mock-Provider: vorbereitete Antworten je Provider-Symbol, der Reihe nach (SEQ_NO)
 -- abgespielt. Platzhalter im BODY: {NOW}, {NOW-<n>M}, {YESTERDAY_NOON} (UTC, ISO 8601).
 -- HTTP_STATUS 0 simuliert einen Verbindungsfehler (systemisch, z. B. ACL/TLS).

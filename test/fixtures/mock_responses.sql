@@ -44,7 +44,20 @@ select provider_symbol, seq_no, http_status, simulate_timeout, body, note from (
     -- Baseline über mehrere Läufe
     select 'TSTB',    1, 200, 'N', '{"symbol":"TSTB","price":100,"currency":"EUR","timestamp":"{NOW-3M}"}', 'Baseline 1' from dual union all
     select 'TSTB',    2, 200, 'N', '{"symbol":"TSTB","price":101,"currency":"EUR","timestamp":"{NOW-2M}"}', 'Baseline 2' from dual union all
-    select 'TSTB',    3, 200, 'N', '{"symbol":"TSTB","price":102,"currency":"EUR","timestamp":"{NOW-1M}"}', 'Baseline 3' from dual
+    select 'TSTB',    3, 200, 'N', '{"symbol":"TSTB","price":102,"currency":"EUR","timestamp":"{NOW-1M}"}', 'Baseline 3' from dual union all
+    -- Regeln: Grenzwerte (Band 10 bis 100)
+    select 'TSTR',    1, 200, 'N', '{"symbol":"TSTR","price":150,"currency":"EUR","timestamp":"{NOW-3M}"}', 'über Obergrenze' from dual union all
+    select 'TSTR',    2, 200, 'N', '{"symbol":"TSTR","price":5,"currency":"EUR","timestamp":"{NOW-2M}"}', 'unter Untergrenze' from dual union all
+    select 'TSTR',    3, 200, 'N', '{"symbol":"TSTR","price":50,"currency":"EUR","timestamp":"{NOW-1M}"}', 'im Band' from dual union all
+    -- Regeln: EWMA ±5 %, Warm-up 3
+    select 'TSTE',    1, 200, 'N', '{"symbol":"TSTE","price":100,"currency":"EUR","timestamp":"{NOW-5M}"}', 'Warm-up' from dual union all
+    select 'TSTE',    2, 200, 'N', '{"symbol":"TSTE","price":100,"currency":"EUR","timestamp":"{NOW-4M}"}', 'Warm-up' from dual union all
+    select 'TSTE',    3, 200, 'N', '{"symbol":"TSTE","price":100,"currency":"EUR","timestamp":"{NOW-3M}"}', 'Warm-up' from dual union all
+    select 'TSTE',    4, 200, 'N', '{"symbol":"TSTE","price":120,"currency":"EUR","timestamp":"{NOW-2M}"}', 'Ausreißer nach oben' from dual union all
+    select 'TSTE',    5, 200, 'N', '{"symbol":"TSTE","price":80,"currency":"EUR","timestamp":"{NOW-1M}"}', 'Ausreißer nach unten' from dual union all
+    -- Regeln: Drosselung über Sessions (Obergrenze 100, 3600 s)
+    select 'TSTT',    1, 200, 'N', '{"symbol":"TSTT","price":150,"currency":"EUR","timestamp":"{NOW-2M}"}', 'Alert' from dual union all
+    select 'TSTT',    2, 200, 'N', '{"symbol":"TSTT","price":160,"currency":"EUR","timestamp":"{NOW-1M}"}', 'gedrosselt (Scheduler-Session)' from dual
 );
 
 commit;

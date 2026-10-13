@@ -4,8 +4,8 @@
 -- Aufruf (SQLcl / SQL*Plus), angemeldet als SYS AS SYSDBA (oder ein Benutzer mit
 -- CREATE USER und GRANT-Recht auf die SYS-Pakete), z. B.:
 --   sql sys@localhost:1521/FREEPDB1 as sysdba
--- Ist die Sitzung im CDB-Root (z. B. "sql / as sysdba"), wechselt das Skript in die
--- PDB SPM_PDB (Standard FREEPDB1).
+-- Das Skript wechselt per ALTER SESSION SET CONTAINER in die PDB SPM_PDB (Standard
+-- FREEPDB1), auch wenn die Sitzung im CDB-Root beginnt (z. B. "sql / as sysdba").
 --   @install/00_admin_create_schema.sql
 --
 -- Das Kennwort wird abgefragt und nicht gespeichert. Das Skript ist wiederholbar:
@@ -21,15 +21,9 @@ define SPM_USER       = SPM
 define SPM_TABLESPACE = USERS
 define SPM_PDB        = FREEPDB1
 
--- Im CDB-Root in die PDB wechseln; dort wäre nur ein allgemeiner Benutzer C##... möglich (ORA-65096)
-column spm_switch new_value SPM_SWITCH noprint
-select case when sys_context('USERENV', 'CON_NAME') = 'CDB$ROOT'
-            then 'alter session set container = &SPM_PDB'
-            else 'select null from dual'
-       end spm_switch
-from   dual;
-&SPM_SWITCH
-/
+-- In die PDB wechseln; im CDB-Root wäre nur ein allgemeiner Benutzer C##... möglich (ORA-65096).
+-- Für SYS auch zulässig, wenn die Sitzung schon in der PDB ist.
+alter session set container = &SPM_PDB;
 
 begin
     if sys_context('USERENV', 'CON_NAME') = 'CDB$ROOT' then

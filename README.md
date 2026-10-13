@@ -31,4 +31,10 @@ aber nicht nach und verändert LILAM nicht.
 
 ## Stand
 
-Projektgerüst. Erster Ausbauschritt: Mock-Provider, Anwendungsschema und manueller Abruflauf.
+- Anwendungsschema, Mock-Provider und manueller Abruflauf (`spm_poll.run`) mit LILAM-Instrumentierung:
+  ein In-Session-Prozess je Lauf, Trace je Provider-Aufruf, Kurs als `MARK_EVENT(p_value)`.
+- Automatisierte Tests mit Mock-Antworten (`test/run_tests.sql`).
+- Offen: Regelkonfiguration und Rule-Set-Generator, Scheduler und Watchdog, APEX-Anwendung,
+  REST-Adapter für einen echten Provider.
+
+Dokumentation: [Installation](docs/installation.md), [Integrationsmatrix](docs/integrationsmatrix.md).

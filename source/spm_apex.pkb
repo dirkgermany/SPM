@@ -1,5 +1,8 @@
 create or replace package body spm_apex as
 
+    -- Anzeigezeitzone; Jobs aus APEX heraus tragen sonst die Zeitzone der ORDS-Sitzung
+    C_TZ constant varchar2(30) := 'Europe/Berlin';
+
     function esc(p_text varchar2) return varchar2 is
     begin
         return dbms_xmlgen.convert(p_text);
@@ -57,7 +60,8 @@ create or replace package body spm_apex as
         select count(case when created_at > systimestamp - interval '1' day then 1 end),
                count(case when status = 'PENDING' then 1 end)
         into   l_day, l_open
-        from   spm_alert_v;
+        from   spm_alert_v
+        where  action_name = spm_poll.C_ACT_SHARE_PRICE;  -- nur Kursregeln
         l_fresh := round((cast(systimestamp as date) - cast(v.last_success_at as date)) * 1440);
 
         l_html := '<div style="display:flex;flex-wrap:wrap;gap:12px;">'
@@ -76,7 +80,7 @@ create or replace package body spm_apex as
             || tile('Alerts (24 h)', to_char(l_day), l_open || ' noch nicht zugestellt',
                     case when l_day > 0 then '#e74c3c' else '#27ae60' end)
             || tile('Abruf-Job', job_text(v.job_exists, v.enabled, v.state),
-                    case when v.next_run_date is not null then 'nächster Lauf ' || to_char(v.next_run_date, 'HH24:MI') end,
+                    case when v.next_run_date is not null then 'nächster Lauf ' || to_char(v.next_run_date at time zone C_TZ, 'HH24:MI') end,
                     job_color(v.job_exists, v.enabled, v.last_job_status))
             || tile('Watchdog', job_text(v.wd_job_exists, v.wd_enabled, v.wd_state), null,
                     job_color(v.wd_job_exists, v.wd_enabled, v.wd_last_job_status))
@@ -228,7 +232,7 @@ create or replace package body spm_apex as
                 || '<td style="padding:6px 10px;">' || esc(p_job) || '</td>'
                 || '<td style="padding:6px 10px;color:' || job_color(p_exists, p_enabled, p_last) || ';font-weight:bold;">'
                 || esc(job_text(p_exists, p_enabled, p_state)) || '</td>'
-                || '<td style="padding:6px 10px;">' || esc(to_char(p_next, 'DD.MM. HH24:MI')) || '</td>'
+                || '<td style="padding:6px 10px;">' || esc(to_char(p_next at time zone C_TZ, 'DD.MM. HH24:MI')) || '</td>'
                 || '<td style="padding:6px 10px;">' || esc(p_last || case when p_error > 0 then ' (ORA-' || p_error || ')' end) || '</td>'
                 || '<td style="padding:6px 10px;text-align:right;">' || esc(to_char(p_fail)) || '</td></tr>';
         end row;
@@ -275,9 +279,8 @@ create or replace package body spm_apex as
                     else ' - ein anderer Lauf ist aktiv' end;
     end run_poll_now;
 
-    procedure set_job(p_kind varchar2, p_enabled boolean) is
+    function job_of(p_kind varchar2) return varchar2 is
         l_name varchar2(128);
-        l_count pls_integer;
     begin
         l_name := case upper(p_kind)
                       when 'POLL'     then spm_job.job_name
@@ -287,7 +290,21 @@ create or replace package body spm_apex as
         if l_name is null then
             raise_application_error(spm_job.C_ERR_JOB, 'Unbekannter Job: ' || p_kind);
         end if;
+        return l_name;
+    end job_of;
 
+    function job_enabled(p_kind varchar2) return varchar2 is
+        l_name    varchar2(128) := job_of(p_kind);
+        l_enabled varchar2(5);
+    begin
+        select max(enabled) into l_enabled from user_scheduler_jobs where job_name = l_name;
+        return case when l_enabled = 'TRUE' then 'Y' else 'N' end;
+    end job_enabled;
+
+    procedure set_job(p_kind varchar2, p_enabled boolean) is
+        l_name  varchar2(128) := job_of(p_kind);
+        l_count pls_integer;
+    begin
         if p_enabled then
             select count(*) into l_count from user_scheduler_jobs where job_name = l_name;
             if l_count = 0 then

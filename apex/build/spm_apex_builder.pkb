@@ -222,6 +222,10 @@ create or replace package body spm_apex_builder as
                 -- Standardwerte: angehakt = Y, nicht angehakt = N
                 l_display := 'NATIVE_SINGLE_CHECKBOX';
                 l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2('use_defaults', 'Y')).to_clob;
+            when 'SWITCH' then
+                -- An = Y, Aus = N
+                l_display := 'NATIVE_YES_NO';
+                l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2('use_defaults', 'Y')).to_clob;
             when 'TEXTAREA' then
                 l_display := 'NATIVE_TEXTAREA';
                 l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
@@ -307,6 +311,47 @@ create or replace package body spm_apex_builder as
             p_process_success_message  => p_success,
             p_internal_uid             => l_raw);
     end process;
+
+    procedure da_change(p_name varchar2, p_seq number, p_item varchar2, p_code varchar2,
+                        p_refresh_region number default null) is
+        l_event number := next_id;
+    begin
+        wwv_flow_imp_page.create_page_da_event(
+            p_id                       => l_event,
+            p_name                     => p_name,
+            p_event_sequence           => p_seq,
+            p_triggering_element_type  => 'ITEM',
+            p_triggering_element       => p_item,
+            p_bind_type                => 'bind',
+            p_execution_type           => 'IMMEDIATE',
+            p_bind_event_type          => 'change');
+        -- Feld senden, Code ausführen, Feld zurückgeben (ohne erneutes change-Ereignis)
+        wwv_flow_imp_page.create_page_da_action(
+            p_id                       => next_id,
+            p_event_id                 => l_event,
+            p_event_result             => 'TRUE',
+            p_action_sequence          => 10,
+            p_execute_on_page_init     => 'N',
+            p_action                   => 'NATIVE_EXECUTE_PLSQL_CODE',
+            p_attribute_01             => p_code,
+            p_attribute_02             => p_item,
+            p_attribute_03             => p_item,
+            p_attribute_04             => 'Y',
+            p_attribute_05             => 'PLSQL',
+            p_wait_for_result          => 'Y');
+        if p_refresh_region is not null then
+            wwv_flow_imp_page.create_page_da_action(
+                p_id                       => next_id,
+                p_event_id                 => l_event,
+                p_event_result             => 'TRUE',
+                p_action_sequence          => 20,
+                p_execute_on_page_init     => 'N',
+                p_action                   => 'NATIVE_REFRESH',
+                p_affected_elements_type   => 'REGION',
+                p_affected_region_id       => p_refresh_region,
+                p_attribute_01             => 'N');
+        end if;
+    end da_change;
 
     procedure branch(p_seq number, p_page number, p_button number default null, p_items varchar2 default null) is
     begin

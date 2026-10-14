@@ -28,6 +28,9 @@ create or replace package spm_apex as
     -- Job ein- oder ausschalten: p_kind = POLL, WATCHDOG, NOTIFY. Legt ihn bei Bedarf an.
     procedure set_job(p_kind varchar2, p_enabled boolean);
 
+    -- Job eingeschaltet? Y oder N (N auch, wenn er nicht angelegt ist)
+    function job_enabled(p_kind varchar2) return varchar2;
+
     -- Rule Set veröffentlichen; liefert eine Meldung
     function publish_rules return varchar2;
 

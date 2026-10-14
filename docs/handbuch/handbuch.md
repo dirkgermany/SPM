@@ -150,7 +150,7 @@ Alle Regeln einer Aktie. Leere Felder bedeuten: diese Regel gibt es nicht. Das F
 
 ![Alerts](img/07_alerts.jpg)
 
-Alle ausgelösten Alerts mit Messwert, gleitendem Mittel, Status und Mail-Zustellung. **PENDING** heißt noch nicht zugestellt, **PROCESSED** zugestellt, **ERROR** Zustellung fehlgeschlagen. Die Nummer anklicken öffnet die Mail-Vorschau.
+Alle ausgelösten Alerts der Kursregeln mit Kurs, gleitendem Mittel, Status und Mail-Zustellung. **PENDING** heißt noch nicht zugestellt, **PROCESSED** zugestellt, **ERROR** Zustellung fehlgeschlagen. Die Nummer anklicken öffnet die Mail-Vorschau. Technische Alerts (Regeln `SPM-…`) stehen im Technischen Monitoring.
 
 ### Alert
 
@@ -165,6 +165,7 @@ Die Mail zum Alert, genau so, wie sie verschickt wurde: Art des Alerts im Kopf (
 Der Blick unter die Haube.
 
 - **Abrufläufe:** jeder Lauf mit Auslöser, Dauer, Status und Zahlen
+- **Technische Alerts:** Alerts der Regeln `SPM-…`, z. B. fehlgeschlagener Abruflauf oder schweigender Watchdog
 - **Warnungen und Fehler:** Meldungen aus den LILAM-Protokollen von Abruf, Watchdog und Zustellung
 - **LILAM-Prozesse:** jeder Lauf als LILAM-Prozess mit Status und Laufzeit
 
@@ -177,7 +178,7 @@ Steuerung der Anwendung (nur für berechtigte Benutzer).
 - **Jobs:** Zustand, nächster Lauf, letzter Lauf und Fehler
 - **Abruf jetzt starten:** ein Abruflauf sofort, unabhängig vom Job
 - **Regeln veröffentlichen:** wie auf der Seite Regeln
-- **Jobs schalten:** Kursabruf, Watchdog und Zustellung ein- oder ausschalten. Den Watchdog nur zusammen mit dem Kursabruf einschalten, sonst meldet er den ausgeschalteten Abruf als Fehler.
+- **Jobs schalten:** je ein Schalter für Kursabruf, Watchdog und Zustellung; er wirkt sofort, ein fehlender Job wird beim Einschalten angelegt. Den Watchdog nur zusammen mit dem Kursabruf einschalten, sonst meldet er den ausgeschalteten Abruf als Fehler.
 
 ## 4. Gut zu wissen
 

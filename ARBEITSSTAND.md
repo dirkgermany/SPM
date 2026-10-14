@@ -53,7 +53,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 
 ## Zustand der Datenbank (Schema SPM)
 
-- Jobs: **Zustellung an** (`SPM_NOTIFY_JOB`), **Kursabruf und Watchdog nicht angelegt**. Solange der Watchdog aus ist, meldet jeder Abruflauf höchstens stündlich `SPM-WATCHDOG-SILENT`.
+- Jobs: **Zustellung an** (`SPM_NOTIFY_JOB`), **Kursabruf und Watchdog angelegt, aber aus** (Schalter auf der Seite Administration). Solange der Watchdog aus ist, meldet jeder Abruflauf höchstens stündlich `SPM-WATCHDOG-SILENT`.
 - Aktives Rule Set: `STOCK_MONITORING` / `SPM_RULES` Version 6.
 - Demo-Daten aus `demo/simulate_prices.sql`: SAP, SIE, AAPL, BMW, ALV, MSFT (Mock) mit je 64 Kursen; 6 Alerts, alle zugestellt.
 - `MAIL_FROM`/`MAIL_TO` von Dirk gesetzt (seine Adressen).
@@ -75,3 +75,5 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 - HTML-Entities (`&#9650;`) im PL/SQL-Quelltext: beim Kompilieren `set define off`, sonst bricht SQLcl die Ersetzung ab.
 - `ALTER TABLE … ADD IF NOT EXISTS` für Spalten nimmt die DB nicht an; vorhandenes JSON-Constraint meldet ORA-40664.
 - Lokale PL/SQL-Funktionen dürfen nicht in SQL-Anweisungen stehen (PLS-00231).
+- Aus APEX angelegte Scheduler-Jobs erhalten die Zeitzone der ORDS-Sitzung (PST8PDT); Anzeige daher mit `at time zone 'Europe/Berlin'`.
+- SQLcl in Git Bash braucht immer eine Eingabe per Pipe (`echo exit | sql …`), sonst „Unzulässige Funktion“.

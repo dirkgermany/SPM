@@ -28,6 +28,14 @@ left   join lateral (
 left   join spm_rule r on r.instrument_id = i.instrument_id
 where  i.symbol not like 'TST%';
 
+-- Zeitzonen für Auswahllisten: IANA-Regionen aus Oracles Zeitzonendatei, dazu UTC
+create or replace view spm_timezone_v as
+select distinct tzname time_zone
+from   v$timezone_names
+where  regexp_like(tzname, '^(Africa|America|Antarctica|Asia|Atlantic|Australia|Europe|Indian|Pacific)/')
+union
+select 'UTC' from dual;
+
 -- Kurshistorie
 create or replace view spm_price_v as
 select p.price_id,

@@ -1245,8 +1245,10 @@ begin
     -- Zeile: Zeitfenster für Schweigen
     spm_apex_builder.item('P6_SILENCE_WINDOWS', r, 140, 'Zeitfenster (JSON)', 'TEXTAREA',
         p_help => 'Nur in diesen Zeiten prüfen, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}]. Leer = immer.');
-    spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 150, 'Zeitzone', p_new_row => false,
-        p_help => 'Pflicht mit Zeitfenstern, z. B. Europe/Berlin oder America/New_York.');
+    spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 150, 'Zeitzone', 'SELECT', p_new_row => false,
+        p_lov => 'select time_zone d, time_zone r from spm_timezone_v order by 1', p_null_text => '- keine -',
+        p_help => 'Pflicht mit Zeitfenstern: Zeitzone der Börse, z. B. Europe/Berlin (XETRA) oder America/New_York'
+               || ' (NYSE, NASDAQ). Namen nach der IANA-Zeitzonendatenbank, wie sie die Datenbank kennt.');
     sav := spm_apex_builder.button('SAVE', 'Speichern', r, 10, p_hot => true);
     del := spm_apex_builder.button('DELETE', 'Löschen', r, 20, p_confirm => 'Regel für dieses Symbol löschen?',
         p_position => 'DELETE');

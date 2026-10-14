@@ -60,7 +60,11 @@ create or replace package body spm_notify as
     function severity_color(p_severity varchar2) return varchar2 is
     begin
         return case upper(p_severity)
-                   when 'CRITICAL' then C_DARK
+                   when 'KRITISCH' then C_DARK
+                   when 'ALARM'    then C_RED
+                   when 'WARNUNG'  then C_ORANGE
+                   when 'HINWEIS'  then C_BLUE
+                   when 'CRITICAL' then C_DARK   -- alte englische Stufen (Alerts vor der Umstellung)
                    when 'ERROR'    then C_RED
                    when 'WARN'     then C_ORANGE
                    when 'INFO'     then C_BLUE
@@ -86,8 +90,12 @@ create or replace package body spm_notify as
     end rule_text;
 
     -- Art des Alerts für Betreff und Kopf (der Schweregrad steht nur daneben)
+    -- Grenzwert, Ausreißer, Schweigen nur für Aktienkurse; alles andere ist Technik
     function alert_kind(m t_msg) return varchar2 is
     begin
+        if m.a.action_name <> spm_poll.C_ACT_SHARE_PRICE then
+            return 'Technik';
+        end if;
         return case
                    when m.rule_operator in ('VAL_MIN', 'VAL_MAX')         then 'Grenzwert'
                    when m.rule_operator like 'VAL_EWMA_DEVIATION_PCT%'   then 'Ausreißer'
@@ -191,7 +199,7 @@ create or replace package body spm_notify as
         l_body clob;
     begin
         l_body := alert_kind(m) || ': ' || nvl(m.rule_comment, m.a.rule_id) || utl_tcp.crlf
-               || m.a.alert_severity || ' - Regel ' || m.a.rule_id || utl_tcp.crlf || utl_tcp.crlf;
+               || 'Dringlichkeit: ' || initcap(m.a.alert_severity) || ' - Regel ' || m.a.rule_id || utl_tcp.crlf || utl_tcp.crlf;
         line(l_body, 'Zeit',     to_char(m.a.created_at, 'DD.MM.YYYY HH24:MI:SS'));
         line(l_body, 'Regel',    m.rule_comment || case when m.rule_operator is not null
                                                    then ' [' || m.rule_operator || ' ' || m.rule_value || ']' end);
@@ -286,7 +294,7 @@ create or replace package body spm_notify as
                || esc(nvl(m.rule_comment, m.a.rule_id)) || '</div>'
                || '<div style="font-size:13px;margin-top:6px;">'
                || '<span style="background:rgba(255,255,255,0.25);border-radius:3px;padding:1px 6px;font-weight:bold;">'
-               || esc(m.a.alert_severity) || '</span> &middot; Regel ' || esc(m.a.rule_id) || ' &middot; '
+               || esc(initcap(m.a.alert_severity)) || '</span> &middot; Regel ' || esc(m.a.rule_id) || ' &middot; '
                || esc(to_char(m.a.created_at, 'DD.MM.YYYY HH24:MI:SS')) || '</div></div>' || utl_tcp.crlf
                || '<div style="padding:4px 20px 20px 20px;">' || utl_tcp.crlf
                || highlight(m)
@@ -416,6 +424,36 @@ create or replace package body spm_notify as
     ------------------------------------------------------------------------
     -- Offene Alerts verarbeiten
     ------------------------------------------------------------------------
+    -- FALSE, wenn MAIL_MAX_PER_HOUR erreicht ist; wartet sonst bis zum Ablauf von
+    -- MAIL_MIN_INTERVAL_SECONDS seit der letzten versandten Mail.
+    function mail_slot_free(p_pid number) return boolean is
+        l_max      number := spm_cfg.get_number('MAIL_MAX_PER_HOUR', 12);
+        l_interval number := spm_cfg.get_number('MAIL_MIN_INTERVAL_SECONDS', 10);
+        l_count    number;
+        l_last     timestamp with time zone;
+        l_wait     number;
+    begin
+        select count(*), max(created_at)
+        into   l_count, l_last
+        from   spm_notification
+        where  transport = 'SMTP' and status = 'SENT' and created_at > systimestamp - interval '1' hour;
+
+        if l_count >= l_max then
+            if p_pid is not null then
+                lilam.warn(p_pid, 'Mail-Limit erreicht (' || l_max || ' je Stunde); weitere Alerts bleiben offen');
+            end if;
+            return false;
+        end if;
+
+        if l_last is not null then
+            l_wait := l_interval - (cast(systimestamp as date) - cast(l_last as date)) * 86400;
+            if l_wait > 0 then
+                dbms_session.sleep(l_wait);
+            end if;
+        end if;
+        return true;
+    end mail_slot_free;
+
     function process_pending(p_pid number default null) return number is
         type t_id_tab is table of number;
         cursor c_lock(p_alert_id number) is
@@ -453,6 +491,12 @@ create or replace package body spm_notify as
         end if;
 
         for i in 1 .. l_ids.count loop
+            -- Spam-Schutz beim echten Versand: Höchstzahl je Stunde, Mindestabstand zwischen Mails.
+            -- Was darüber hinausgeht, bleibt PENDING und geht später hinaus.
+            if l_transport = 'SMTP' and not mail_slot_free(p_pid) then
+                exit;
+            end if;
+
             open c_lock(l_ids(i));
             fetch c_lock into l_rec;
             l_found := c_lock%found;

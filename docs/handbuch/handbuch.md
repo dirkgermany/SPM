@@ -30,9 +30,46 @@ Gleichzeitig überwacht LILAM die Anwendung selbst: ob Abrufe laufen, wie lange 
 | **Ausreißer** | der Kurs um mehr als x % vom gleitenden Mittel (EWMA) abweicht, nach oben oder unten |
 | **Schweigen** | seit x Sekunden kein neuer Kurs kam, auf Wunsch nur in Handelszeiten |
 
-- **Gleitendes Mittel (EWMA):** ein Durchschnitt, der neuere Kurse stärker gewichtet. *Warm-up* legt fest, nach wie vielen Kursen Ausreißer gemeldet werden; *Alpha* bestimmt, wie schnell das Mittel neuen Kursen folgt (klein = ruhig, groß = schnell).
 - **Drosselung:** Nach einem Alert schweigt dieselbe Regel für dieselbe Aktie eine Zeit lang (Standard eine Stunde), auch über mehrere Abrufläufe hinweg.
 - **Veröffentlichen:** Änderungen an Regeln wirken erst, wenn sie über „Regeln veröffentlichen“ als neue Version an LILAM übergeben werden.
+
+### Ausreißer: gleitendes Mittel, Warm-up und Alpha
+
+Ein Ausreißer ist ein Kurs, der deutlich von dem abweicht, was die Aktie *gerade* tut. Als Maßstab dient das **gleitende Mittel** (EWMA, exponentiell gewichteter Mittelwert): ein Durchschnitt der bisherigen Kurse, in dem neuere Kurse mehr zählen als ältere. Es folgt dem Kurs, aber verzögert und geglättet. Eine Grenze von 3 % heißt: Liegt ein neuer Kurs mehr als 3 % über (oder unter) diesem Mittel, gibt es einen Alert. Verglichen wird mit dem Mittel *vor* dem neuen Kurs, damit ein Ausreißer seinen eigenen Maßstab nicht verschiebt.
+
+**Alpha** legt fest, wie stark jeder neue Kurs das Mittel bewegt: neues Mittel = altes Mittel + Alpha × (neuer Kurs − altes Mittel).
+
+| Alpha | Wirkung bei Kursen | Geeignet für |
+| --- | --- | --- |
+| klein, z. B. 0,1 | Das Mittel ist träge und erinnert sich lange an frühere Kurse. Auch ein langsamer Trend weicht mit der Zeit vom Mittel ab und kann einen Alert auslösen. | ruhige Werte, wenn auch schleichende Bewegungen auffallen sollen |
+| groß, z. B. 0,5 | Das Mittel folgt dem Kurs schnell. Nur plötzliche Sprünge zwischen zwei Abrufen fallen auf, Trends nicht. | schwankungsreiche Werte, wenn nur echte Sprünge interessieren |
+
+Beispiel: Das Mittel steht bei 100 EUR, der nächste Kurs ist 110 EUR. Mit Alpha 0,1 steigt das Mittel auf 101, mit Alpha 0,5 auf 105. Kommt danach wieder 110, liegt der Kurs im ersten Fall noch fast 9 % über dem Mittel, im zweiten nur noch knapp 5 %.
+
+**Warm-up** ist die Anzahl Kurse, die LILAM zuerst sammelt, bevor Ausreißer gemeldet werden. In dieser Zeit ist das Mittel der einfache Durchschnitt. Ohne Warm-up würde schon der zweite Kurs einer neuen Aktie mit einem Mittel aus nur einem Kurs verglichen – jede normale Schwankung wäre dann ein „Ausreißer“. Standard sind 3 Kurse; bei einem Abruf alle 15 Minuten entsprechen 5 Kurse gut einer Stunde Anlaufzeit. Das Mittel läuft über Abrufläufe und Neustarts hinweg weiter; das Warm-up gilt nur für eine neue oder zurückgesetzte Aktie.
+
+### Dringlichkeit
+
+Jeder Alert hat eine Dringlichkeit. Sie bestimmt die Farbe der Mail und der Anzeige.
+
+| Dringlichkeit | Bedeutung |
+| --- | --- |
+| **Kritisch** | Die Überwachung selbst ist gefährdet, es kommen keine Daten mehr. |
+| **Alarm** | Eine Schwelle ist verletzt, jetzt hinschauen bzw. handeln. |
+| **Warnung** | Auffällig, beobachten. |
+| **Hinweis** | Zur Kenntnis. |
+
+| Regel | Dringlichkeit (Standard) |
+| --- | --- |
+| Kurs unter Untergrenze / über Obergrenze (`SAP-MIN`, `SAP-MAX`) | Alarm |
+| Ausreißer nach oben / unten (`SAP-UP`, `SAP-DOWN`) | Warnung |
+| Kein neuer Kurs (`SAP-SILENT`) | Warnung |
+| Kein Abruflauf, Abruflauf hängt, Abruf-Job gestört | Kritisch |
+| Abruflauf fehlgeschlagen, Watchdog oder Zustellung läuft nicht | Alarm |
+| Abruflauf nur teilweise erfolgreich, fehlerhafte Symbole | Warnung |
+| Abruflauf oder Provider-Aufruf zu langsam | Hinweis |
+
+Die Dringlichkeit der Regeln je Aktie lässt sich im Regel-Formular ändern, die der technischen Regeln ist fest.
 
 ### Selbstüberwachung
 
@@ -104,9 +141,9 @@ Die Regeln aller Aktien in einer Liste. **Symbol anklicken** öffnet die Regel z
 Alle Regeln einer Aktie. Leere Felder bedeuten: diese Regel gibt es nicht. Das Fragezeichen neben einem Feld erklärt es.
 
 - **Unter- und Obergrenze:** feste Grenzen in der Währung der Aktie
-- **Ausreißer nach oben und unten:** Abweichung in Prozent vom gleitenden Mittel; dazu Warm-up und Alpha
+- **Ausreißer nach oben und unten:** Abweichung in Prozent vom gleitenden Mittel; dazu Warm-up und Alpha (siehe Abschnitt „Ausreißer“)
 - **Schweigen nach:** Sekunden ohne neuen Kurs; mit **Zeitfenster** und **Zeitzone** nur zu Handelszeiten, z. B. `[{"days":"MON-FRI","from":"09:00","to":"17:30"}]` mit `Europe/Berlin`
-- **Schweregrad:** INFO, WARN, ERROR oder CRITICAL; bestimmt die Farbe der Mail
+- **Dringlichkeit:** Hinweis, Warnung, Alarm oder Kritisch; bestimmt die Farbe der Mail (Standard: Grenzwert Alarm, Ausreißer und Schweigen Warnung)
 - **Drosselung:** Mindestabstand zwischen zwei Alerts derselben Regel
 
 ### Alerts
@@ -119,7 +156,7 @@ Alle ausgelösten Alerts mit Messwert, gleitendem Mittel, Status und Mail-Zustel
 
 ![Alert](img/08_alert.jpg)
 
-Die Mail zum Alert, genau so, wie sie verschickt wurde: Art des Alerts im Kopf (Grenzwert, Ausreißer, Schweigen oder Technik), Schweregrad als Abzeichen, der Messwert hervorgehoben mit Grenze bzw. Abweichung, darunter die Einzelheiten.
+Die Mail zum Alert, genau so, wie sie verschickt wurde: Art des Alerts im Kopf (Grenzwert, Ausreißer, Schweigen oder Technik), Dringlichkeit als Abzeichen, der Messwert hervorgehoben mit Grenze bzw. Abweichung, darunter die Einzelheiten.
 
 ### Technisches Monitoring
 
@@ -144,7 +181,7 @@ Steuerung der Anwendung (nur für berechtigte Benutzer).
 
 ## 4. Gut zu wissen
 
-- **Mock-Provider:** Derzeit sind alle Kurse simuliert und bewegen sich zufällig um 100. Alerts entstehen deshalb nur bei passend eingestellten Regeln.
+- **Mock-Provider:** Derzeit sind alle Kurse simuliert. Die Demo-Verläufe erzeugt `demo/simulate_prices.sql` (rund 16 Stunden im 15-Minuten-Takt, mit einem Grenzwert-Alarm bei SAP und Siemens, einem Ausreißer bei Apple und einem Abruffehler bei Microsoft); danach bewegen sich die Kurse zufällig um den letzten Wert.
 - **Handelszeiten und Feiertage:** Schweige-Regeln kennen Zeitfenster, aber keine Feiertage. An Feiertagen meldet die Regel unter Umständen Schweigen.
 - **Keine Entwarnung:** Kommen Signale nach einem Schweige-Alert wieder, gibt es keine eigene Meldung.
 - **Sprache der Listen:** Bedienelemente wie „Actions“ und „Go“ sind englisch, solange in APEX kein deutsches Sprachpaket installiert ist.

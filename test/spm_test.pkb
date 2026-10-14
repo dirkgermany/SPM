@@ -825,7 +825,7 @@ create or replace package body spm_test as
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
         ok(instr(l_body, 'kein Prozess (SPMTEST_POLL nicht gestartet)') > 0, 'kein Prozess');
-        ok(instr(l_subject, '[SPM] Schweigen SPMTEST_POLL: ') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_subject, '[SPM] Technik SPMTEST_POLL: Kein Abruflauf seit 3 s') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
         ok(instr(l_html, 'border-left:6px solid #8e44ad') > 0, 'HTML: Schweigen violett');
         ok(instr(l_html, 'kein Start von SPMTEST_POLL') > 0, 'HTML: Schweigen in Worten');

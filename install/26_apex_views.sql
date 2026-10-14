@@ -74,7 +74,7 @@ create or replace view spm_alert_v as
 select a.alert_id,
        a.created_at,
        a.rule_id,
-       a.alert_severity,
+       initcap(a.alert_severity)          alert_severity,
        a.action_name,
        a.context_name                      symbol,
        a.process_id,

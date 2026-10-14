@@ -44,19 +44,32 @@ Alle Regeln: Trigger `MARK_EVENT`, Action `SHARE_PRICE`, Context = Symbol. Nur a
 
 Drosselung aller technischen Regeln: `RULE_TECH_THROTTLE_SECONDS` (Standard 3600). Ein leerer Grenzwert lässt die Regel weg.
 
-| Regel-ID | Trigger / Action / Context | Operator | Wert | Bedeutung |
-| --- | --- | --- | --- | --- |
-| `SPM-RUN-FAILED` | `PROCESS_STOP` / `SPM_POLL` | `STATUS_EQUALS` | `-1` | Abruflauf fehlgeschlagen (ERROR) |
-| `SPM-RUN-PARTIAL` | `PROCESS_STOP` / `SPM_POLL` | `STATUS_EQUALS` | `2` | Abruflauf teilweise erfolgreich (WARN) |
-| `SPM-RUN-SLOW` | `PROCESS_STOP` / `SPM_POLL` | `TIME_MAX_RUNTIME_EXCEEDED` | `RULE_RUN_MAX_MS` | Lauf dauert zu lange |
-| `SPM-PROVIDER-SLOW` | `TRACE_STOP` / `PROVIDER_CALL` | `TIME_MAX_DURATION_MS` | `RULE_PROVIDER_CALL_MAX_MS` | Provider-Aufruf dauert zu lange |
-| `SPM-POLL-FAILED` | `MARK_EVENT` / `POLL_RESULT` / `FAILED` | `VAL_MAX` | `RULE_POLL_FAILED_MAX` | mehr fehlerhafte Symbole je Lauf |
-| `SPM-QUOTE-AGE` | `MARK_EVENT` / `QUOTE_AGE_SEC` | `VAL_MAX` | `RULE_QUOTE_AGE_MAX_SEC` | Quote zu alt; standardmäßig aus (Wochenende) |
-| `SPM-POLL-SILENT` | `PROCESS_START` / `SPM_POLL` | `TIME_MAX_SILENCE_SECONDS` | `RULE_POLL_SILENCE_SEC` (2700) | kein Abruflauf gestartet (ERROR) |
-| `SPM-RUN-HANG` | `PROCESS_UPDATE` / `SPM_POLL` | `TIME_MAX_SILENCE_SECONDS` | `RULE_RUN_HANG_SEC` (600) | laufender Abruflauf sendet nichts (ERROR) |
-| `SPM-WATCHDOG-SILENT` | `PROCESS_START` / `SPM_WATCHDOG` | `TIME_MAX_SILENCE_SECONDS` | `RULE_WATCHDOG_SILENCE_SEC` (1800) | kein Watchdog-Lauf gestartet (ERROR) |
-| `SPM-POLLJOB-BAD` | `MARK_EVENT` / `POLL_JOB_HEALTH` | `VAL_MIN` | `1` | Abruf-Job fehlt, ist ausgeschaltet, defekt oder zuletzt fehlgeschlagen (ERROR) |
-| `SPM-NOTIFY-SILENT` | `PROCESS_START` / `SPM_NOTIFY` | `TIME_MAX_SILENCE_SECONDS` | `RULE_NOTIFY_SILENCE_SEC` (10800) | kein Zustell-Lauf gestartet (ERROR) |
+| Regel-ID | Trigger / Action / Context | Operator | Wert | Bedeutung | Dringlichkeit |
+| --- | --- | --- | --- | --- | --- |
+| `SPM-POLL-SILENT` | `PROCESS_START` / `SPM_POLL` | `TIME_MAX_SILENCE_SECONDS` | `RULE_POLL_SILENCE_SEC` (2700) | kein Abruflauf gestartet | Kritisch |
+| `SPM-RUN-HANG` | `PROCESS_UPDATE` / `SPM_POLL` | `TIME_MAX_SILENCE_SECONDS` | `RULE_RUN_HANG_SEC` (600) | laufender Abruflauf meldet sich nicht | Kritisch |
+| `SPM-POLLJOB-BAD` | `MARK_EVENT` / `POLL_JOB_HEALTH` | `VAL_MIN` | `1` | Abruf-Job fehlt, ist ausgeschaltet, defekt oder zuletzt fehlgeschlagen | Kritisch |
+| `SPM-RUN-FAILED` | `PROCESS_STOP` / `SPM_POLL` | `STATUS_EQUALS` | `-1` | Abruflauf fehlgeschlagen | Alarm |
+| `SPM-WATCHDOG-SILENT` | `PROCESS_START` / `SPM_WATCHDOG` | `TIME_MAX_SILENCE_SECONDS` | `RULE_WATCHDOG_SILENCE_SEC` (1800) | kein Watchdog-Lauf gestartet | Alarm |
+| `SPM-NOTIFY-SILENT` | `PROCESS_START` / `SPM_NOTIFY` | `TIME_MAX_SILENCE_SECONDS` | `RULE_NOTIFY_SILENCE_SEC` (10800) | kein Zustell-Lauf gestartet | Alarm |
+| `SPM-RUN-PARTIAL` | `PROCESS_STOP` / `SPM_POLL` | `STATUS_EQUALS` | `2` | Abruflauf nur teilweise erfolgreich | Warnung |
+| `SPM-POLL-FAILED` | `MARK_EVENT` / `POLL_RESULT` / `FAILED` | `VAL_MAX` | `RULE_POLL_FAILED_MAX` (0) | fehlerhafte Symbole in einem Lauf | Warnung |
+| `SPM-QUOTE-AGE` | `MARK_EVENT` / `QUOTE_AGE_SEC` | `VAL_MAX` | `RULE_QUOTE_AGE_MAX_SEC` | Kurs vom Provider zu alt; standardmäßig aus (Wochenende) | Warnung |
+| `SPM-RUN-SLOW` | `PROCESS_STOP` / `SPM_POLL` | `TIME_MAX_RUNTIME_EXCEEDED` | `RULE_RUN_MAX_MS` | Abruflauf dauert zu lange | Hinweis |
+| `SPM-PROVIDER-SLOW` | `TRACE_STOP` / `PROVIDER_CALL` | `TIME_MAX_DURATION_MS` | `RULE_PROVIDER_CALL_MAX_MS` | Provider-Aufruf dauert zu lange | Hinweis |
+
+## Dringlichkeit
+
+LILAM gibt die Dringlichkeit (`alert.severity`) unverändert an den Alert weiter; SPM verwendet vier Stufen (`spm_rules.C_HINWEIS` … `C_KRITISCH`). Sie bestimmen die Farbe der Mail und der Anzeige.
+
+| Dringlichkeit | Bedeutung | Farbe |
+| --- | --- | --- |
+| `KRITISCH` | die Überwachung selbst ist gefährdet, es kommen keine Daten mehr | dunkelrot |
+| `ALARM` | eine Schwelle ist verletzt, jetzt hinschauen bzw. handeln | rot |
+| `WARNUNG` | auffällig, beobachten | orange |
+| `HINWEIS` | zur Kenntnis | blau |
+
+Standard je Aktie (in `SPM_RULE` bzw. im Regel-Formular änderbar): Grenzwerte (`-MIN`, `-MAX`) Alarm, Ausreißer (`-UP`, `-DOWN`) und Schweigen (`-SILENT`) Warnung. Die technischen Regeln haben feste Stufen (Tabelle oben). In Betreff und Kopf der Mail steht die Art des Alerts: Grenzwert, Ausreißer und Schweigen bei Aktienkursen, sonst Technik.
 
 ## Watchdog
 

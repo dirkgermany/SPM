@@ -1053,7 +1053,7 @@ begin
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol');
-    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Schweregrad');
+    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
     spm_apex_builder.ir_col('MEASURED_VALUE', 'Messwert', 'NUMBER');
     spm_apex_builder.ir_col('STATUS', 'Status');
     spm_apex_builder.ir_col('MAIL_STATUS', 'Mail');
@@ -1200,22 +1200,22 @@ begin
         p_help => 'Grenzwert: Alert, wenn der Kurs darunter liegt (die Grenze selbst löst nicht aus). Leer = keine Regel.');
     spm_apex_builder.item('P6_VAL_MAX', r, 40, 'Obergrenze', 'NUMBER', p_new_row => false,
         p_help => 'Grenzwert: Alert, wenn der Kurs darüber liegt. Leer = keine Regel.');
-    spm_apex_builder.item('P6_SEVERITY_LIMIT', r, 50, 'Schweregrad Grenzwert', 'SELECT', p_new_row => false,
-        p_lov => 'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL');
+    spm_apex_builder.item('P6_SEVERITY_LIMIT', r, 50, 'Dringlichkeit Grenzwert', 'SELECT', p_new_row => false,
+        p_lov => 'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH');
     spm_apex_builder.item('P6_EWMA_PCT_UP', r, 60, 'Ausreißer nach oben (%)', 'NUMBER',
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent über dem gleitenden Mittel (EWMA) vor diesem Kurs liegt.');
     spm_apex_builder.item('P6_EWMA_PCT_DOWN', r, 70, 'Ausreißer nach unten (%)', 'NUMBER', p_new_row => false,
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent unter dem gleitenden Mittel liegt.');
-    spm_apex_builder.item('P6_SEVERITY_EWMA', r, 80, 'Schweregrad Ausreißer', 'SELECT', p_new_row => false,
-        p_lov => 'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL');
+    spm_apex_builder.item('P6_SEVERITY_EWMA', r, 80, 'Dringlichkeit Ausreißer', 'SELECT', p_new_row => false,
+        p_lov => 'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH');
     spm_apex_builder.item('P6_EWMA_WARMUP', r, 90, 'Warm-up (Anzahl Kurse)', 'NUMBER',
         p_help => 'So viele Kurse bildet LILAM zunächst den einfachen Mittelwert und meldet keine Ausreißer. Leer = 3.');
     spm_apex_builder.item('P6_EWMA_ALPHA', r, 100, 'Alpha (0 bis 1)', 'NUMBER', p_new_row => false,
         p_help => 'Gewicht des neuesten Kurses im gleitenden Mittel. Klein (0,1) = ruhiges Mittel, groß (0,5) = folgt schnell. Leer = 0,1.');
     spm_apex_builder.item('P6_SILENCE_SECONDS', r, 110, 'Schweigen nach (s)', 'NUMBER',
         p_help => 'Alert, wenn so lange kein neuer Kurs gespeichert wurde. Leer = keine Regel.');
-    spm_apex_builder.item('P6_SEVERITY_SILENCE', r, 120, 'Schweregrad Schweigen', 'SELECT', p_new_row => false,
-        p_lov => 'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL');
+    spm_apex_builder.item('P6_SEVERITY_SILENCE', r, 120, 'Dringlichkeit Schweigen', 'SELECT', p_new_row => false,
+        p_lov => 'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH');
     spm_apex_builder.item('P6_SILENCE_WINDOWS', r, 130, 'Zeitfenster (JSON)', 'TEXTAREA',
         p_help => 'Nur in diesen Zeiten prüfen, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}]. Leer = immer.');
     spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 140, 'Zeitzone', p_new_row => false,
@@ -1232,8 +1232,8 @@ begin
      || '    select spm_apex.fmt_num(val_min), spm_apex.fmt_num(val_max), spm_apex.fmt_num(ewma_pct_up),' || chr(10)
      || '           spm_apex.fmt_num(ewma_pct_down), spm_apex.fmt_num(ewma_warmup), spm_apex.fmt_num(ewma_alpha),' || chr(10)
      || '           spm_apex.fmt_num(silence_seconds),' || chr(10)
-     || '           silence_windows, silence_time_zone, nvl(severity_limit, ''ERROR''), nvl(severity_ewma, ''WARN''),' || chr(10)
-     || '           nvl(severity_silence, ''WARN''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),' || chr(10)
+     || '           silence_windows, silence_time_zone, nvl(severity_limit, ''ALARM''), nvl(severity_ewma, ''WARNUNG''),' || chr(10)
+     || '           nvl(severity_silence, ''WARNUNG''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),' || chr(10)
      || '           case when updated_at is null then ''Y'' else rule_active end' || chr(10)
      || '    into   :P6_VAL_MIN, :P6_VAL_MAX, :P6_EWMA_PCT_UP, :P6_EWMA_PCT_DOWN, :P6_EWMA_WARMUP, :P6_EWMA_ALPHA,' || chr(10)
      || '           :P6_SILENCE_SECONDS, :P6_SILENCE_WINDOWS, :P6_SILENCE_TIME_ZONE, :P6_SEVERITY_LIMIT,' || chr(10)
@@ -1277,7 +1277,7 @@ begin
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol / Context');
-    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Schweregrad');
+    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
     spm_apex_builder.ir_col('MEASURED_VALUE', 'Messwert', 'NUMBER');
     spm_apex_builder.ir_col('MEASURED_EWMA', 'EWMA', 'NUMBER');
     spm_apex_builder.ir_col('STATUS', 'Status');

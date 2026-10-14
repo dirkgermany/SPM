@@ -32,6 +32,8 @@ using (
     select 'MAIL_FROM',                null,                  'Absenderadresse; leer = es wird nicht versendet' from dual union all
     select 'MAIL_TO',                  null,                  'Empfänger, mehrere durch Komma getrennt; leer = es wird nicht versendet' from dual union all
     select 'MAIL_SUBJECT_PREFIX',      '[SPM]',               'Präfix des Betreffs' from dual union all
+    select 'MAIL_MAX_PER_HOUR',        '12',                  'Spam-Schutz: höchstens so viele Mails je Stunde; der Rest bleibt offen' from dual union all
+    select 'MAIL_MIN_INTERVAL_SECONDS', '10',                 'Spam-Schutz: Mindestabstand zwischen zwei Mails (s)' from dual union all
     select 'NOTIFY_JOB_NAME',          'SPM_NOTIFY_JOB',      'Name des DBMS_SCHEDULER-Jobs der Zustellung' from dual union all
     select 'NOTIFY_PROCESS_NAME',      'SPM_NOTIFY',          'LILAM-Prozessname eines Zustell-Laufs' from dual union all
     select 'NOTIFY_RUN_MINUTES',       '60',                  'Ein Zustell-Lauf wartet so lange auf Alerts, dann startet der Job neu' from dual union all

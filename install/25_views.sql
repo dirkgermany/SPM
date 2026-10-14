@@ -41,12 +41,12 @@ runs as (
            max(case when status = 'FAILED' then ended_at end)                last_failure_at,
            max(started_at)                                                   last_start_at
     from   spm_run
-    where  trigger_type in ('SCHEDULER', 'MANUAL', 'APEX') and symbol_filter is null
+    where  trigger_type in ('SCHEDULER', 'MANUAL', 'APEX', 'SIMULATION') and symbol_filter is null
 ),
 last_run as (
     select run_id, trigger_type, status, started_at, ended_at, cnt_requested, cnt_stored, cnt_failed, message
     from   spm_run
-    where  trigger_type in ('SCHEDULER', 'MANUAL', 'APEX') and symbol_filter is null
+    where  trigger_type in ('SCHEDULER', 'MANUAL', 'APEX', 'SIMULATION') and symbol_filter is null
     order  by run_id desc
     fetch  first 1 row only
 )

@@ -9,6 +9,13 @@ create or replace package spm_rules as
     -- PUBLISH prüft es mit LILAM.CHECK_RULE_SET, trägt es als neue Version in LILAM_RULES ein
     -- und aktiviert es mit LILAM.SERVER_UPDATE_RULES für die Gruppe LILAM_GROUP.
 
+    -- Dringlichkeit (LILAM: alert.severity). Kritisch = Überwachung gefährdet, Alarm = Schwelle
+    -- verletzt, Warnung = auffällig, Hinweis = zur Kenntnis. Standards siehe rules/README.md.
+    C_HINWEIS  constant varchar2(30) := 'HINWEIS';
+    C_WARNUNG  constant varchar2(30) := 'WARNUNG';
+    C_ALARM    constant varchar2(30) := 'ALARM';
+    C_KRITISCH constant varchar2(30) := 'KRITISCH';
+
     -- Fehler bei ungültiger Konfiguration
     C_ERR_RULE    constant pls_integer := -20311;
     -- Fehler beim Veröffentlichen
@@ -23,8 +30,8 @@ create or replace package spm_rules as
         p_ewma_pct_down     number   default null,
         p_ewma_warmup       number   default null,
         p_ewma_alpha        number   default null,
-        p_severity_limit    varchar2 default 'ERROR',
-        p_severity_ewma     varchar2 default 'WARN',
+        p_severity_limit    varchar2 default 'ALARM',
+        p_severity_ewma     varchar2 default 'WARNUNG',
         p_throttle_seconds  number   default 3600,
         p_is_active         varchar2 default 'Y',
         -- Schweige-Regel: kein neuer Kurs seit p_silence_seconds; optional nur in Zeitfenstern
@@ -32,7 +39,7 @@ create or replace package spm_rules as
         p_silence_seconds   number   default null,
         p_silence_windows   varchar2 default null,
         p_silence_time_zone varchar2 default null,
-        p_severity_silence  varchar2 default 'WARN'
+        p_severity_silence  varchar2 default 'WARNUNG'
     );
 
     procedure delete_rule(p_symbol varchar2);

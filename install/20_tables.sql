@@ -101,8 +101,8 @@ create table if not exists spm_rule (
     ewma_pct_down     number,
     ewma_warmup       number,
     ewma_alpha        number,
-    severity_limit    varchar2(30) default 'ERROR' not null,
-    severity_ewma     varchar2(30) default 'WARN'  not null,
+    severity_limit    varchar2(30) default 'ALARM'   not null,
+    severity_ewma     varchar2(30) default 'WARNUNG' not null,
     throttle_seconds  number       default 3600    not null,
     is_active         varchar2(1)  default 'Y'     not null,
     updated_at        timestamp with time zone default systimestamp not null,
@@ -132,7 +132,7 @@ begin
     add_column('silence_seconds',   'number');
     add_column('silence_windows',   'varchar2(4000)');
     add_column('silence_time_zone', 'varchar2(64)');
-    add_column('severity_silence',  'varchar2(30) default ''WARN''');
+    add_column('severity_silence',  'varchar2(30) default ''WARNUNG''');
 end;
 /
 
@@ -181,6 +181,18 @@ begin
     if l_count = 0 then
         execute immediate 'alter table spm_notification add (body_html clob)';
     end if;
+end;
+/
+
+-- Dringlichkeit auf deutsche Stufen umstellen (vorhandene Installationen; wiederholbar)
+begin
+    execute immediate q'[alter table spm_rule modify (severity_limit default 'ALARM', severity_ewma default 'WARNUNG', severity_silence default 'WARNUNG')]';
+    for c in (select column_value col from table(sys.odcivarchar2list('SEVERITY_LIMIT', 'SEVERITY_EWMA', 'SEVERITY_SILENCE'))) loop
+        execute immediate 'update spm_rule set ' || c.col || ' = case ' || c.col
+            || q'[ when 'INFO' then 'HINWEIS' when 'WARN' then 'WARNUNG' when 'ERROR' then 'ALARM' when 'CRITICAL' then 'KRITISCH' end]'
+            || ' where ' || c.col || q'[ in ('INFO', 'WARN', 'ERROR', 'CRITICAL')]';
+    end loop;
+    commit;
 end;
 /
 

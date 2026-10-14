@@ -24,6 +24,19 @@ using (
     select 'RULE_POLL_SILENCE_SEC',    '2700',                'Schweige-Regel: kein Abruflauf gestartet seit (s); leer = keine Regel' from dual union all
     select 'RULE_RUN_HANG_SEC',        '600',                 'Schweige-Regel: laufender Abruflauf sendet nichts seit (s); leer = keine Regel' from dual union all
     select 'RULE_WATCHDOG_SILENCE_SEC', '1800',               'Schweige-Regel: kein Watchdog-Lauf seit (s); leer = keine Regel' from dual union all
+    -- Zustellung von Alerts per E-Mail (SPM_NOTIFY, eigener Job)
+    select 'MAIL_TRANSPORT',           'SMTP',                'SMTP = per UTL_SMTP versenden, MOCK = nur protokollieren (Tests)' from dual union all
+    select 'MAIL_SMTP_HOST',           'localhost',           'SMTP-Server (Relay, z. B. lokales Postfix); Netzwerk-ACL nötig' from dual union all
+    select 'MAIL_SMTP_PORT',           '25',                  'Port des SMTP-Servers' from dual union all
+    select 'MAIL_HELO_DOMAIN',         'localhost',           'Domain für SMTP HELO' from dual union all
+    select 'MAIL_FROM',                null,                  'Absenderadresse; leer = es wird nicht versendet' from dual union all
+    select 'MAIL_TO',                  null,                  'Empfänger, mehrere durch Komma getrennt; leer = es wird nicht versendet' from dual union all
+    select 'MAIL_SUBJECT_PREFIX',      '[SPM]',               'Präfix des Betreffs' from dual union all
+    select 'NOTIFY_JOB_NAME',          'SPM_NOTIFY_JOB',      'Name des DBMS_SCHEDULER-Jobs der Zustellung' from dual union all
+    select 'NOTIFY_PROCESS_NAME',      'SPM_NOTIFY',          'LILAM-Prozessname eines Zustell-Laufs' from dual union all
+    select 'NOTIFY_RUN_MINUTES',       '60',                  'Ein Zustell-Lauf wartet so lange auf Alerts, dann startet der Job neu' from dual union all
+    select 'NOTIFY_DAYS_TO_KEEP',      '30',                  'LILAM bereinigt Zustell-Läufe, die älter sind (Tage)' from dual union all
+    select 'RULE_NOTIFY_SILENCE_SEC',  '10800',               'Schweige-Regel: kein Zustell-Lauf gestartet seit (s); leer = keine Regel' from dual union all
     -- Rule Set (SPM_RULES.PUBLISH)
     select 'RULE_SET_NAME',            'SPM_RULES',           'Name des LILAM Rule Sets (LILAM_RULES.SET_NAME, max. 30 Zeichen)' from dual union all
     select 'RULE_HANDLER',             'SPM_ALERT',           'DBMS_ALERT-Kanal der Alerts (max. 30 Zeichen)' from dual union all

@@ -152,6 +152,26 @@ exception
 end;
 /
 
+-- Zustellung von Alerts (SPM_NOTIFY): ein Eintrag je Zustellversuch eines LILAM-Alerts.
+-- Ohne Geheimnisse; der Text ist der versendete Mailtext.
+create table if not exists spm_notification (
+    notification_id  number generated always as identity,
+    alert_id         number        not null,
+    rule_id          varchar2(50),
+    alert_severity   varchar2(30),
+    transport        varchar2(20)  not null,
+    recipients       varchar2(1000),
+    subject          varchar2(400),
+    body             clob,
+    status           varchar2(20)  not null,
+    error_message    varchar2(1000),
+    created_at       timestamp with time zone default systimestamp not null,
+    constraint spm_notification_pk primary key (notification_id),
+    constraint spm_notification_status_chk check (status in ('SENT', 'ERROR'))
+);
+
+create index if not exists spm_notification_alert_ix on spm_notification (alert_id);
+
 -- Mock-Provider: vorbereitete Antworten je Provider-Symbol, der Reihe nach (SEQ_NO)
 -- abgespielt. Platzhalter im BODY: {NOW}, {NOW-<n>M}, {YESTERDAY_NOON} (UTC, ISO 8601).
 -- HTTP_STATUS 0 simuliert einen Verbindungsfehler (systemisch, z. B. ACL/TLS).

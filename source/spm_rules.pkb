@@ -257,6 +257,13 @@ create or replace package body spm_rules as
                      'TIME_MAX_SILENCE_SECONDS', num(l_limit), 'ERROR', l_throttle);
         end if;
 
+        l_limit := spm_cfg.get_number('RULE_NOTIFY_SILENCE_SEC');
+        if l_limit is not null then
+            add_rule(p_rules, 'SPM-NOTIFY-SILENT', 'Kein Zustell-Lauf gestartet (s)',
+                     'PROCESS_START', spm_cfg.get_text('NOTIFY_PROCESS_NAME', 'SPM_NOTIFY'), null,
+                     'TIME_MAX_SILENCE_SECONDS', num(l_limit), 'ERROR', l_throttle);
+        end if;
+
         -- Watchdog meldet den Zustand des Abruf-Jobs: 1 = in Ordnung, 0 = nicht
         add_rule(p_rules, 'SPM-POLLJOB-BAD', 'Abruf-Job fehlt, ist ausgeschaltet oder zuletzt fehlgeschlagen',
                  'MARK_EVENT', spm_watchdog.C_ACT_POLL_JOB_HEALTH, null, 'VAL_MIN', '1', 'ERROR', l_throttle);

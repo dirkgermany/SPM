@@ -183,6 +183,9 @@ with the Grow plan“). Deutsche Werte gehen gratis nur als US-Notierung in USD:
    ```sql
    @test/live_twelvedata.sql "AAPL,SAP:XETR"
    ```
+   In SQL Developer mit vollem Pfad und **F5** (Skript ausführen), Ausgabe im Reiter „Skriptausgabe“.
+   Symbolverzeichnis: [twelvedata.com/stocks](https://twelvedata.com/stocks); Beispiele für den Gratistarif im Handbuch
+   (Abschnitt „Instrument bearbeiten“).
 4. Watchlist: in APEX neue Einträge mit Provider „Twelve Data“, Provider-Symbol (z. B. `SAP`) und Währung `USD`
    anlegen. Vorhandene Mock-Einträge nicht umstellen, sondern neue Symbole verwenden (z. B. `SAP.US`):
    sonst mischen sich EUR- und USD-Kurse in einer Reihe und in der EWMA-Baseline.

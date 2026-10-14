@@ -14,8 +14,7 @@ SPM (Stock Price Monitoring), Anwendung „SPM Stock Watch“: Referenzanwendung
 
 | PR | Inhalt | Stand |
 | --- | --- | --- |
-| #1–#6 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX | gemergt |
-| #7 | Dringlichkeit, Spam-Schutz, Demo-Simulation, Button „Startseite“, Handbuch-Entwurf | **offen**, wartet auf Dirks OK zum Mergen |
+| #1–#7 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung | gemergt |
 
 Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachziehen, `claude` pushen. `gh` liegt unter `C:\Program Files\GitHub CLI\gh.exe` (angemeldet als dirkgermany).
 
@@ -61,7 +60,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 
 ## Offene Punkte
 
-1. **PR #7 mergen** (auf Dirks Anweisung).
+1. Kein offener PR. Neue Arbeit auf `claude`, PR nach `main` auf Dirks Anweisung.
 2. **Handbuch als PDF**: Text steht (`docs/handbuch/handbuch.md`). Es fehlen breite Bildschirmfotos (das Browser-Fenster ist nur ~800 px breit; Dirk zieht es breiter oder liefert Screenshots; vorhandene schmale Bilder liegen unversioniert in `docs/handbuch/img/`), dann HTML → PDF mit Edge headless (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe --headless --print-to-pdf=…`). Python ist nicht installiert.
 3. Entkoppelter LILAM-Modus (Server, Dispatcher) für APEX – später, wenn es ein echtes APEX-Board gibt.
 4. Echte Kurse: Twelve Data ist angebunden (ACL, Schlüssel gesetzt, Live-Abruf geprüft). Gratistarif ohne deutsche Börsen → US-Notierungen in USD (`SAP`, `SIEGY`, `ALIZY`, `BMWKY`, `AAPL`, `MSFT`). Watchlist-Einträge legt Dirk in APEX an (neue Symbole, Mock-Einträge nicht umstellen); danach Regeln anlegen, Abruf-Job einschalten.

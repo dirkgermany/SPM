@@ -2013,6 +2013,7 @@ wwv_flow_imp_page.create_worksheet_column(
 ,p_column_type=>'NUMBER'
 ,p_heading_alignment=>'RIGHT'
 ,p_column_alignment=>'RIGHT'
+,p_format_mask=>'999G990D00'
 ,p_tz_dependent=>'N'
 ,p_use_as_row_header=>'N'
 );
@@ -2025,6 +2026,7 @@ wwv_flow_imp_page.create_worksheet_column(
 ,p_column_type=>'NUMBER'
 ,p_heading_alignment=>'RIGHT'
 ,p_column_alignment=>'RIGHT'
+,p_format_mask=>'999G990D00'
 ,p_tz_dependent=>'N'
 ,p_use_as_row_header=>'N'
 );
@@ -2049,6 +2051,7 @@ wwv_flow_imp_page.create_worksheet_column(
 ,p_column_type=>'NUMBER'
 ,p_heading_alignment=>'RIGHT'
 ,p_column_alignment=>'RIGHT'
+,p_format_mask=>'990D00'
 ,p_tz_dependent=>'N'
 ,p_use_as_row_header=>'N'
 );
@@ -2503,9 +2506,11 @@ wwv_flow_imp_page.create_page_process(
 ,p_process_name=>'Laden'
 ,p_process_sql_clob=>wwv_flow_string.join(wwv_flow_t_varchar2(
 'begin',
-'    select val_min, val_max, ewma_pct_up, ewma_pct_down, ewma_warmup, ewma_alpha, silence_seconds,',
+'    select spm_apex.fmt_num(val_min), spm_apex.fmt_num(val_max), spm_apex.fmt_num(ewma_pct_up),',
+'           spm_apex.fmt_num(ewma_pct_down), spm_apex.fmt_num(ewma_warmup), spm_apex.fmt_num(ewma_alpha),',
+'           spm_apex.fmt_num(silence_seconds),',
 '           silence_windows, silence_time_zone, nvl(severity_limit, ''ERROR''), nvl(severity_ewma, ''WARN''),',
-'           nvl(severity_silence, ''WARN''), nvl(throttle_seconds, 3600),',
+'           nvl(severity_silence, ''WARN''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),',
 '           case when updated_at is null then ''Y'' else rule_active end',
 '    into   :P6_VAL_MIN, :P6_VAL_MAX, :P6_EWMA_PCT_UP, :P6_EWMA_PCT_DOWN, :P6_EWMA_WARMUP, :P6_EWMA_ALPHA,',
 '           :P6_SILENCE_SECONDS, :P6_SILENCE_WINDOWS, :P6_SILENCE_TIME_ZONE, :P6_SEVERITY_LIMIT,',

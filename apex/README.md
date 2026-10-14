@@ -4,7 +4,7 @@ Anwendung 100 im Workspace `SPM` (APEX 24.2, Universal Theme, Anmeldung mit APEX
 
 | Datei | Zweck |
 | --- | --- |
-| `f100.sql` | regulärer APEX-Export (`apex export -applicationid 100 -skipExportDate -expOriginalIds`); importierbar über App Builder oder SQLcl |
+| `f100.sql` | regulärer APEX-Export (`apex export -applicationid 100 -skipExportDate -expOriginalIds -overwrite-files`); importierbar über App Builder oder SQLcl |
 | `build/spm_app_build.sql` | Quelle der Anwendung: baut sie mit dem Hilfspaket `build/spm_apex_builder` auf (Grundlage: von APEX erzeugte leere Anwendung) |
 
 ## Importieren

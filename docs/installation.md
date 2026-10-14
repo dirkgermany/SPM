@@ -89,7 +89,7 @@ Details: [rules/README.md](../rules/README.md).
 
 ## LILAM aktualisieren
 
-SPM installiert LILAM in das eigene Schema. Nach einer Änderung im LILAM-Checkout `install/install.sql` erneut ausführen, damit der Body im Schema SPM neu kompiliert wird. Skripte mit `WHENEVER`/`EXIT` über die SQLcl-Kommandozeile ausführen, nicht über einen SQLcl-MCP-Server: `EXIT` beendet dessen Skript-Engine.
+SPM installiert LILAM in das eigene Schema. Nach einer Änderung im LILAM-Checkout `install/install.sql` erneut ausführen, damit der Body im Schema SPM neu kompiliert wird. Laufende SPM-Jobs vorher anhalten (`spm_job.disable_job` und `spm_job.stop_job`, je Job), sonst wartet das Kompilieren auf das Ende ihres Laufs; danach wieder einschalten. Die Tests (`test/run_tests.sql`) laufen nur, wenn kein SPM-Job eingeschaltet ist. Skripte mit `WHENEVER`/`EXIT` über die SQLcl-Kommandozeile ausführen, nicht über einen SQLcl-MCP-Server: `EXIT` beendet dessen Skript-Engine.
 
 ## Abruf-Job (DBMS_SCHEDULER)
 

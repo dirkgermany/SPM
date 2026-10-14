@@ -128,6 +128,23 @@ create or replace package body spm_job as
         end if;
     end disable_job;
 
+    procedure stop_job(p_job_name varchar2 default null) is
+        l_name  varchar2(128) := resolve(p_job_name, job_name);
+        l_state user_scheduler_jobs.state%type;
+    begin
+        select max(state) into l_state from user_scheduler_jobs where job_name = l_name;
+        if l_state = 'RUNNING' then
+            begin
+                dbms_scheduler.stop_job(l_name);
+            exception
+                when others then
+                    if sqlcode = -27366 then null; -- Job läuft nicht mehr
+                    else dbms_scheduler.stop_job(l_name, force => true);
+                    end if;
+            end;
+        end if;
+    end stop_job;
+
     procedure run_now(p_job_name varchar2 default null) is
         l_name varchar2(128) := resolve(p_job_name, job_name);
     begin

@@ -788,6 +788,7 @@ create or replace package body spm_test as
     procedure t_notify is
         l_subject varchar2(400);
         l_body    clob;
+        l_html    clob;
         l_alert   number;
         l_pending number;
         l_count   number;
@@ -796,18 +797,34 @@ create or replace package body spm_test as
     begin
         start_case('Zustellung: Mailtext eines Grenzwert-Alerts');
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTR-MAX';
-        spm_notify.build_message(l_alert, l_subject, l_body);
-        ok(instr(l_subject, 'ERROR TSTR-MAX') > 0, 'Betreff: ' || l_subject);
+        spm_notify.build_message(l_alert, l_subject, l_body, l_html);
+        ok(instr(l_subject, '[SPM] Grenzwert TSTR: ') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_html, 'Grenzwert: ') > 0, 'HTML: Art des Alerts im Kopf');
         ok(instr(l_body, 'TSTR - Test TSTR') > 0, 'Symbol und Instrument');
         ok(instr(l_body, '150 EUR') > 0, 'Kurs mit Währung');
         ok(instr(l_body, '[VAL_MAX 100]') > 0, 'Regel mit Schwelle');
         ok(instr(l_body, 'SPM_POLL (') > 0, 'Prozess');
+        ok(instr(l_html, 'background:#e74c3c') > 0, 'HTML: Kopf in ERROR-Rot');
+        ok(instr(l_html, '150,00 EUR') > 0, 'HTML: Kurs');
+        ok(instr(l_html, '&#9650; über der Obergrenze 100,00 EUR (50,00 %)') > 0, 'HTML: Überschreitung in Prozent');
+        ok(instr(l_html, 'Obergrenze 100 EUR') > 0, 'HTML: Regel in Worten');
+
+        start_case('Zustellung: Mailtext eines EWMA-Ausreißers');
+        select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTE-UP';
+        spm_notify.build_message(l_alert, l_subject, l_body, l_html);
+        ok(instr(l_html, 'über dem gleitenden Mittel') > 0, 'HTML: Abweichung vom EWMA');
+        ok(instr(l_subject, '[SPM] Ausreißer TSTE: ') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_html, 'color:#e74c3c;font-weight:bold;">&#9650;') > 0, 'HTML: starke Abweichung rot, Pfeil nach oben');
+        ok(instr(l_html, 'mehr als 5 % über dem gleitenden Mittel (EWMA)') > 0, 'HTML: Regel in Worten');
 
         start_case('Zustellung: Mailtext eines Schweige-Alerts ohne Prozess');
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
-        spm_notify.build_message(l_alert, l_subject, l_body);
+        spm_notify.build_message(l_alert, l_subject, l_body, l_html);
         ok(instr(l_body, 'kein Prozess (SPM_POLL nicht gestartet)') > 0, 'kein Prozess');
+        ok(instr(l_subject, '[SPM] Schweigen SPM_POLL: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
+        ok(instr(l_html, 'border-left:6px solid #8e44ad') > 0, 'HTML: Schweigen violett');
+        ok(instr(l_html, 'kein Start von SPM_POLL') > 0, 'HTML: Schweigen in Worten');
 
         start_case('Zustellung: ohne Absender/Empfänger bleiben Alerts offen');
         set_group(g_group_rules);
@@ -941,7 +958,19 @@ create or replace package body spm_test as
 
     ------------------------------------------------------------------------
     procedure run_all is
+        l_jobs varchar2(4000);
     begin
+        -- Tests ändern SPM_CONFIG vorübergehend (Gruppe, Mail-Empfänger); laufende Jobs würden das lesen
+        select listagg(job_name, ', ') within group (order by job_name)
+        into   l_jobs
+        from   user_scheduler_jobs
+        where  job_name in (spm_job.job_name, spm_job.watchdog_job_name, spm_job.notify_job_name)
+        and    (enabled = 'TRUE' or state = 'RUNNING');
+        if l_jobs is not null then
+            raise_application_error(-20903, 'Vor den Tests ausschalten und anhalten: ' || l_jobs
+                || ' (spm_job.disable_job, spm_job.stop_job)');
+        end if;
+
         g_pass := 0;
         g_fail := 0;
         setup;

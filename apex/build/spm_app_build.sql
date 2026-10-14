@@ -1112,7 +1112,8 @@ begin
     spm_apex_builder.item('P3_CURRENCY', r, 50, 'Währung', p_required => true,
         p_help => 'ISO-Code mit drei Buchstaben, z. B. EUR. Quotes in anderer Währung werden verworfen.');
     spm_apex_builder.item('P3_EXCHANGE', r, 60, 'Börse');
-    spm_apex_builder.item('P3_IS_ACTIVE', r, 70, 'Aktiv', 'SELECT', p_lov => 'STATIC2:Ja;Y,Nein;N');
+    spm_apex_builder.item('P3_IS_ACTIVE', r, 70, 'Aktiv', 'SWITCH',
+        p_help => 'Nur aktive Aktien werden abgerufen. Wirkt mit Speichern.');
     sav := spm_apex_builder.button('SAVE', 'Speichern', r, 10, p_hot => true);
     btn := spm_apex_builder.button('CANCEL', 'Abbrechen', r, 20, p_action => 'REDIRECT_URL',
         p_url => lnk || '2:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');

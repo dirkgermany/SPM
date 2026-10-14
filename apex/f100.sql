@@ -1673,12 +1673,12 @@ wwv_flow_imp_page.create_page_item(
 ,p_item_sequence=>70
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000039)
 ,p_prompt=>'Aktiv'
-,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:Ja;Y,Nein;N'
+,p_display_as=>'NATIVE_YES_NO'
 ,p_field_template=>1609121967514267634
 ,p_item_template_options=>'#DEFAULT#'
+,p_help_text=>'Nur aktive Aktien werden abgerufen. Wirkt mit Speichern.'
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'page_action_on_selection', 'NONE')).to_clob
+  'use_defaults', 'Y')).to_clob
 );
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(91000000000051)

@@ -31,7 +31,7 @@ begin
     end loop;
 
     for p in (select column_value name from table(sys.odcivarchar2list(
-                  'SPM_TEST', 'SPM_JOB', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
+                  'SPM_TEST', 'SPM_JOB', 'SPM_WATCHDOG', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
         drop_object('package', p.name);
     end loop;
 

@@ -22,6 +22,52 @@ create or replace package body spm_rules as
         end if;
     end check_severity;
 
+    -- Zeitfenster mit LILAM prüfen (Format der Tage/Zeiten, Zeitzone): Probe-Regel durch CHECK_RULE_SET
+    procedure check_windows(p_windows varchar2, p_time_zone varchar2) is
+        l_set   json_object_t := json_object_t();
+        l_rules json_array_t  := json_array_t();
+        l_rule  json_object_t := json_object_t();
+        l_cond  json_object_t := json_object_t();
+        l_alert json_object_t := json_object_t();
+        l_win   json_array_t;
+        l_error varchar2(4000);
+    begin
+        if p_windows is null then
+            if p_time_zone is not null then
+                raise_application_error(C_ERR_RULE, 'Zeitzone nur zusammen mit Zeitfenstern');
+            end if;
+            return;
+        end if;
+        if p_time_zone is null then
+            raise_application_error(C_ERR_RULE, 'Zeitfenster brauchen eine Zeitzone (z. B. Europe/Berlin)');
+        end if;
+        begin
+            l_win := json_array_t.parse(p_windows);
+        exception
+            when others then
+                raise_application_error(C_ERR_RULE, 'Zeitfenster müssen ein JSON-Array sein, z. B. '
+                    || '[{"days":"MON-FRI","from":"09:00","to":"17:30"}]');
+        end;
+
+        l_rule.put('id', 'CHECK');
+        l_rule.put('trigger_type', 'MARK_EVENT');
+        l_rule.put('action', 'CHECK');
+        l_cond.put('operator', 'TIME_MAX_SILENCE_SECONDS');
+        l_cond.put('value', '60');
+        l_rule.put('condition', l_cond);
+        l_rule.put('windows', l_win);
+        l_rule.put('time_zone', p_time_zone);
+        l_alert.put('handler', 'CHECK');
+        l_rule.put('alert', l_alert);
+        l_rules.append(l_rule);
+        l_set.put('rules', l_rules);
+
+        l_error := lilam.check_rule_set(l_set.to_clob);
+        if l_error is not null then
+            raise_application_error(C_ERR_RULE, 'Zeitfenster ungültig: ' || substr(l_error, 1, 500));
+        end if;
+    end check_windows;
+
     procedure save_rule(
         p_symbol            varchar2,
         p_val_min           number   default null,
@@ -33,10 +79,22 @@ create or replace package body spm_rules as
         p_severity_limit    varchar2 default 'ERROR',
         p_severity_ewma     varchar2 default 'WARN',
         p_throttle_seconds  number   default 3600,
-        p_is_active         varchar2 default 'Y'
+        p_is_active         varchar2 default 'Y',
+        p_silence_seconds   number   default null,
+        p_silence_windows   varchar2 default null,
+        p_silence_time_zone varchar2 default null,
+        p_severity_silence  varchar2 default 'WARN'
     ) is
         l_id number := get_instrument_id(p_symbol);
     begin
+        if p_silence_seconds <= 0 or p_silence_seconds <> trunc(p_silence_seconds) then
+            raise_application_error(C_ERR_RULE, 'Schweigezeit in ganzen Sekunden größer 0 angeben');
+        end if;
+        if p_silence_seconds is null and (p_silence_windows is not null or p_silence_time_zone is not null) then
+            raise_application_error(C_ERR_RULE, 'Zeitfenster nur zusammen mit einer Schweigezeit');
+        end if;
+        check_windows(p_silence_windows, p_silence_time_zone);
+        check_severity(p_severity_silence, 'Severity der Schweige-Regel');
         if p_val_min is not null and p_val_max is not null and p_val_min >= p_val_max then
             raise_application_error(C_ERR_RULE, 'Untergrenze muss kleiner als Obergrenze sein');
         end if;
@@ -71,13 +129,17 @@ create or replace package body spm_rules as
             r.ewma_warmup = p_ewma_warmup, r.ewma_alpha = p_ewma_alpha,
             r.severity_limit = p_severity_limit, r.severity_ewma = p_severity_ewma,
             r.throttle_seconds = p_throttle_seconds, r.is_active = p_is_active,
+            r.silence_seconds = p_silence_seconds, r.silence_windows = p_silence_windows,
+            r.silence_time_zone = p_silence_time_zone, r.severity_silence = p_severity_silence,
             r.updated_at = systimestamp
         when not matched then insert
             (instrument_id, val_min, val_max, ewma_pct_up, ewma_pct_down, ewma_warmup, ewma_alpha,
-             severity_limit, severity_ewma, throttle_seconds, is_active)
+             severity_limit, severity_ewma, throttle_seconds, is_active,
+             silence_seconds, silence_windows, silence_time_zone, severity_silence)
         values
             (l_id, p_val_min, p_val_max, p_ewma_pct_up, p_ewma_pct_down, p_ewma_warmup, p_ewma_alpha,
-             p_severity_limit, p_severity_ewma, p_throttle_seconds, p_is_active);
+             p_severity_limit, p_severity_ewma, p_throttle_seconds, p_is_active,
+             p_silence_seconds, p_silence_windows, p_silence_time_zone, p_severity_silence);
     end save_rule;
 
     procedure delete_rule(p_symbol varchar2) is
@@ -107,7 +169,9 @@ create or replace package body spm_rules as
         p_operator  varchar2,
         p_value     varchar2,
         p_severity  varchar2,
-        p_throttle  number
+        p_throttle  number,
+        p_windows   varchar2 default null,
+        p_time_zone varchar2 default null
     ) is
         l_rule  json_object_t := json_object_t();
         l_cond  json_object_t := json_object_t();
@@ -126,6 +190,10 @@ create or replace package body spm_rules as
             l_cond.put('value', p_value);
         end if;
         l_rule.put('condition', l_cond);
+        if p_windows is not null then
+            l_rule.put('windows', json_array_t.parse(p_windows));
+            l_rule.put('time_zone', p_time_zone);
+        end if;
 
         l_alert.put('handler', spm_cfg.get_text('RULE_HANDLER', 'SPM_ALERT'));
         l_alert.put('severity', p_severity);
@@ -168,6 +236,30 @@ create or replace package body spm_rules as
             add_rule(p_rules, 'SPM-QUOTE-AGE', 'Quote zu alt (s), je Symbol',
                      'MARK_EVENT', spm_poll.C_ACT_QUOTE_AGE, null, 'VAL_MAX', num(l_limit), 'WARN', l_throttle);
         end if;
+
+        -- Watchdog: Schweige-Regeln, geprüft durch LILAM.CHECK_SILENCE (Watchdog- und Abruf-Job)
+        l_limit := spm_cfg.get_number('RULE_POLL_SILENCE_SEC');
+        if l_limit is not null then
+            add_rule(p_rules, 'SPM-POLL-SILENT', 'Kein Abruflauf gestartet (s)',
+                     'PROCESS_START', l_process, null, 'TIME_MAX_SILENCE_SECONDS', num(l_limit), 'ERROR', l_throttle);
+        end if;
+
+        l_limit := spm_cfg.get_number('RULE_RUN_HANG_SEC');
+        if l_limit is not null then
+            add_rule(p_rules, 'SPM-RUN-HANG', 'Laufender Abruflauf sendet nichts (s)',
+                     'PROCESS_UPDATE', l_process, null, 'TIME_MAX_SILENCE_SECONDS', num(l_limit), 'ERROR', l_throttle);
+        end if;
+
+        l_limit := spm_cfg.get_number('RULE_WATCHDOG_SILENCE_SEC');
+        if l_limit is not null then
+            add_rule(p_rules, 'SPM-WATCHDOG-SILENT', 'Kein Watchdog-Lauf gestartet (s)',
+                     'PROCESS_START', spm_cfg.get_text('WATCHDOG_PROCESS_NAME', 'SPM_WATCHDOG'), null,
+                     'TIME_MAX_SILENCE_SECONDS', num(l_limit), 'ERROR', l_throttle);
+        end if;
+
+        -- Watchdog meldet den Zustand des Abruf-Jobs: 1 = in Ordnung, 0 = nicht
+        add_rule(p_rules, 'SPM-POLLJOB-BAD', 'Abruf-Job fehlt, ist ausgeschaltet oder zuletzt fehlgeschlagen',
+                 'MARK_EVENT', spm_watchdog.C_ACT_POLL_JOB_HEALTH, null, 'VAL_MIN', '1', 'ERROR', l_throttle);
     end add_technical_rules;
 
     -- 'pct[|warmup[|alpha]]'; Alpha ohne Warm-up braucht den LILAM-Standard 3 als Platzhalter
@@ -203,6 +295,12 @@ create or replace package body spm_rules as
                 add_rule(p_rules, r.symbol || '-DOWN', 'Kurs mehr als ' || num(r.ewma_pct_down) || ' % unter dem EWMA',
                          'MARK_EVENT', l_action, r.symbol, 'VAL_EWMA_DEVIATION_PCT_DOWN',
                          ewma_value(r.ewma_pct_down, r.ewma_warmup, r.ewma_alpha), r.severity_ewma, r.throttle_seconds);
+            end if;
+            -- Kein neuer Kurs; Doppelabrufe zählen nicht (SHARE_PRICE nur für neu gespeicherte Kurse)
+            if r.silence_seconds is not null then
+                add_rule(p_rules, r.symbol || '-SILENT', 'Kein neuer Kurs seit ' || num(r.silence_seconds) || ' s',
+                         'MARK_EVENT', l_action, r.symbol, 'TIME_MAX_SILENCE_SECONDS', num(r.silence_seconds),
+                         r.severity_silence, r.throttle_seconds, r.silence_windows, r.silence_time_zone);
             end if;
         end loop;
     end add_symbol_rules;

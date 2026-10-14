@@ -2,13 +2,15 @@
 -- SPM: Sichten
 -- =============================================================================
 
--- Zustand des Abruf-Jobs (DBMS_SCHEDULER) und Aktualität der Abrufläufe in einer Zeile.
--- Eine Zeile auch ohne Job (JOB_EXISTS = 'N'), damit Dashboard und Watchdog das erkennen.
--- Abrufläufe: nur über die ganze Watchlist (ohne Symbolfilter, den nur Tests setzen).
+-- Zustand des Abruf-Jobs und des Watchdog-Jobs (DBMS_SCHEDULER) und Aktualität der
+-- Abrufläufe in einer Zeile. Eine Zeile auch ohne Job (JOB_EXISTS = 'N'), damit Dashboard
+-- und Watchdog das erkennen. Abrufläufe: nur über die ganze Watchlist (ohne Symbolfilter,
+-- den nur Tests setzen).
 create or replace view spm_job_status_v as
 with cfg as (
     select upper(coalesce(max(case when param_name = 'POLL_JOB_NAME' then param_value end), 'SPM_POLL_JOB')) job_name,
-           max(case when param_name = 'POLL_INTERVAL_MINUTES' then param_value end) interval_minutes
+           max(case when param_name = 'POLL_INTERVAL_MINUTES' then param_value end) interval_minutes,
+           upper(coalesce(max(case when param_name = 'WATCHDOG_JOB_NAME' then param_value end), 'SPM_WATCHDOG_JOB')) wd_job_name
     from   spm_config
 ),
 last_detail as (
@@ -16,6 +18,13 @@ last_detail as (
            substr(d.additional_info, 1, 1000) additional_info
     from   user_scheduler_job_run_details d
     join   cfg on d.job_name = cfg.job_name
+    order  by d.log_id desc
+    fetch  first 1 row only
+),
+wd_detail as (
+    select d.status, d.error#
+    from   user_scheduler_job_run_details d
+    join   cfg on d.job_name = cfg.wd_job_name
     order  by d.log_id desc
     fetch  first 1 row only
 ),
@@ -56,9 +65,20 @@ select cfg.job_name,
        lr.cnt_requested                            last_run_requested,
        lr.cnt_stored                               last_run_stored,
        lr.cnt_failed                               last_run_failed,
-       lr.message                                  last_run_message
+       lr.message                                  last_run_message,
+       cfg.wd_job_name,
+       case when w.job_name is null then 'N' else 'Y' end wd_job_exists,
+       w.enabled                                   wd_enabled,
+       w.state                                     wd_state,
+       w.next_run_date                             wd_next_run_date,
+       w.last_start_date                           wd_last_start_date,
+       w.failure_count                             wd_failure_count,
+       wd.status                                   wd_last_job_status,
+       wd.error#                                   wd_last_job_error
 from   cfg
 left   join user_scheduler_jobs j on j.job_name = cfg.job_name
+left   join user_scheduler_jobs w on w.job_name = cfg.wd_job_name
 left   join last_detail d         on 1 = 1
+left   join wd_detail wd          on 1 = 1
 cross  join runs
 left   join last_run lr           on 1 = 1;

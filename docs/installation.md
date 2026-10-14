@@ -115,3 +115,17 @@ from   spm_job_status_v;
 ```
 
 Das Abrufintervall muss zu den Limits des Providers passen (Anzahl Symbole × Läufe je Tag).
+
+## Watchdog-Job
+
+Erst einschalten, wenn der Abruf-Job läuft (sonst meldet der Watchdog den ausgeschalteten Abruf-Job als Fehler):
+
+```sql
+exec spm_job.create_watchdog_job                       -- WATCHDOG_JOB_NAME, alle 5 min, ausgeschaltet
+exec spm_job.enable_job(spm_job.watchdog_job_name)
+exec spm_job.disable_job(spm_job.watchdog_job_name)
+```
+
+Die Schweige-Regeln (`SPM-POLL-SILENT` usw.) stehen im Rule Set; nach Änderungen an `RULE_*_SEC` in `SPM_CONFIG` `exec spm_rules.publish`. Zustand beider Jobs: `SPM_JOB_STATUS_V` (Spalten `WD_*` für den Watchdog). Details: [rules/README.md](../rules/README.md#watchdog).
+
+SPM benötigt LILAM mit `CHECK_SILENCE` (Branch `messwerte` ab `0026955`); `install/install.sql` prüft das.

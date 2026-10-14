@@ -1,15 +1,18 @@
 create or replace package spm_job as
-    -- DBMS_SCHEDULER-Job für den Kursabruf. Der Job ruft spm_poll.run('SCHEDULER') auf;
-    -- jeder Lauf ist ein eigener LILAM-Prozess in der Job-Session (In-Session-Modus).
-    -- Ein Lauf mit systemischem Fehler endet mit Ausnahme, der Scheduler verbucht ihn als FAILED.
+    -- DBMS_SCHEDULER-Jobs von SPM:
+    --   Abruf-Job:    spm_poll.run('SCHEDULER'); jeder Lauf ist ein eigener LILAM-Prozess
+    --                 (In-Session). Ein systemischer Fehler endet mit Ausnahme, der Scheduler
+    --                 verbucht den Lauf als FAILED.
+    --   Watchdog-Job: spm_watchdog.run (LILAM.CHECK_SILENCE und Zustand des Abruf-Jobs).
     --
-    -- Name und Intervall aus SPM_CONFIG (POLL_JOB_NAME, POLL_INTERVAL_MINUTES).
-    -- Die Installation legt den Job nicht an: create_job, dann enable_job.
+    -- Namen und Intervalle aus SPM_CONFIG (POLL_JOB_NAME, POLL_INTERVAL_MINUTES,
+    -- WATCHDOG_JOB_NAME, WATCHDOG_INTERVAL_MINUTES). Die Installation legt keinen Job an:
+    -- create_job / create_watchdog_job, dann enable_job.
 
     C_ERR_JOB constant pls_integer := -20321;
 
-    -- Anlegen oder Intervall/Filter ändern; der Job bleibt bzw. wird deaktiviert, wenn p_enable = false.
-    -- p_symbol_like: nur für Tests (Teilmenge der Watchlist), sonst NULL.
+    -- Abruf-Job anlegen oder Intervall/Filter ändern; der Job bleibt bzw. wird ausgeschaltet,
+    -- wenn p_enable = false. p_symbol_like: nur für Tests (Teilmenge der Watchlist), sonst NULL.
     procedure create_job(
         p_interval_minutes number   default null,
         p_enable           boolean  default false,
@@ -17,9 +20,17 @@ create or replace package spm_job as
         p_symbol_like      varchar2 default null
     );
 
+    -- Watchdog-Job anlegen oder Intervall ändern (wie create_job)
+    procedure create_watchdog_job(
+        p_interval_minutes number   default null,
+        p_enable           boolean  default false,
+        p_job_name         varchar2 default null
+    );
+
+    -- p_job_name NULL = Abruf-Job; für den Watchdog spm_job.watchdog_job_name übergeben
     procedure enable_job(p_job_name varchar2 default null);
 
-    -- Ein laufender Abruf wird nicht abgebrochen, nur keine weiteren gestartet.
+    -- Ein laufender Lauf wird nicht abgebrochen, nur keine weiteren gestartet.
     procedure disable_job(p_job_name varchar2 default null);
 
     -- Einmal sofort in eigener Session starten (asynchron), unabhängig vom Zeitplan.
@@ -28,6 +39,8 @@ create or replace package spm_job as
     procedure drop_job(p_job_name varchar2 default null);
 
     function job_name return varchar2;
+
+    function watchdog_job_name return varchar2;
 
 end spm_job;
 /

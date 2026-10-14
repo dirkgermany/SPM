@@ -290,6 +290,17 @@ create or replace package body spm_poll as
                    case l_status when C_STATUS_SUCCESS then 'SUCCESS' when C_STATUS_PARTIAL then 'PARTIAL' else 'FAILED' end,
                    l_counts, l_info);
         release_lock;
+
+        -- Zweiter Prüfer neben dem Watchdog-Job (meldet u. a. einen ausgefallenen Watchdog).
+        -- CHECK_SILENCE wirft laut LILAM keine Ausnahme; zur Sicherheit trotzdem gekapselt.
+        begin
+            if spm_cfg.get_text('LILAM_GROUP') is not null then
+                lilam.check_silence(spm_cfg.get_text('LILAM_GROUP'));
+            end if;
+        exception
+            when others then null;
+        end;
+
         return l_run_id;
 
     exception

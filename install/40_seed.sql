@@ -16,6 +16,14 @@ using (
     -- Scheduler-Job (SPM_JOB)
     select 'POLL_JOB_NAME',            'SPM_POLL_JOB',        'Name des DBMS_SCHEDULER-Jobs für den Kursabruf' from dual union all
     select 'POLL_INTERVAL_MINUTES',    '15',                  'Abrufintervall des Jobs in Minuten (1 bis 1440); Provider-Limits beachten' from dual union all
+    -- Watchdog (SPM_WATCHDOG, eigener Job)
+    select 'WATCHDOG_JOB_NAME',        'SPM_WATCHDOG_JOB',    'Name des DBMS_SCHEDULER-Jobs des Watchdogs' from dual union all
+    select 'WATCHDOG_INTERVAL_MINUTES', '5',                  'Prüfintervall des Watchdogs in Minuten; deutlich unter der kleinsten Schweigezeit' from dual union all
+    select 'WATCHDOG_PROCESS_NAME',    'SPM_WATCHDOG',        'LILAM-Prozessname eines Watchdog-Laufs' from dual union all
+    select 'WATCHDOG_DAYS_TO_KEEP',    '7',                   'LILAM bereinigt Watchdog-Läufe, die älter sind (Tage)' from dual union all
+    select 'RULE_POLL_SILENCE_SEC',    '2700',                'Schweige-Regel: kein Abruflauf gestartet seit (s); leer = keine Regel' from dual union all
+    select 'RULE_RUN_HANG_SEC',        '600',                 'Schweige-Regel: laufender Abruflauf sendet nichts seit (s); leer = keine Regel' from dual union all
+    select 'RULE_WATCHDOG_SILENCE_SEC', '1800',               'Schweige-Regel: kein Watchdog-Lauf seit (s); leer = keine Regel' from dual union all
     -- Rule Set (SPM_RULES.PUBLISH)
     select 'RULE_SET_NAME',            'SPM_RULES',           'Name des LILAM Rule Sets (LILAM_RULES.SET_NAME, max. 30 Zeichen)' from dual union all
     select 'RULE_HANDLER',             'SPM_ALERT',           'DBMS_ALERT-Kanal der Alerts (max. 30 Zeichen)' from dual union all

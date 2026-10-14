@@ -116,6 +116,42 @@ create table if not exists spm_rule (
     constraint spm_rule_active_chk check (is_active in ('Y', 'N'))
 );
 
+-- Schweige-Regel je Instrument (LILAM TIME_MAX_SILENCE_SECONDS): seit SILENCE_SECONDS kein neuer Kurs.
+-- SILENCE_WINDOWS: JSON-Array der LILAM-Zeitfenster, z. B. Handelszeiten; dann SILENCE_TIME_ZONE Pflicht.
+declare
+    procedure add_column(p_column varchar2, p_definition varchar2) is
+        l_count pls_integer;
+    begin
+        select count(*) into l_count from user_tab_columns
+        where  table_name = 'SPM_RULE' and column_name = upper(p_column);
+        if l_count = 0 then
+            execute immediate 'alter table spm_rule add (' || p_column || ' ' || p_definition || ')';
+        end if;
+    end add_column;
+begin
+    add_column('silence_seconds',   'number');
+    add_column('silence_windows',   'varchar2(4000)');
+    add_column('silence_time_zone', 'varchar2(64)');
+    add_column('severity_silence',  'varchar2(30) default ''WARN''');
+end;
+/
+
+begin
+    execute immediate 'alter table spm_rule add constraint spm_rule_silence_chk check (silence_seconds is null or silence_seconds > 0)';
+exception
+    when others then
+        if sqlcode <> -2264 then raise; end if; -- Constraint existiert
+end;
+/
+
+begin
+    execute immediate 'alter table spm_rule add constraint spm_rule_windows_json_chk check (silence_windows is json)';
+exception
+    when others then
+        if sqlcode not in (-2264, -40664) then raise; end if; -- Constraint existiert
+end;
+/
+
 -- Mock-Provider: vorbereitete Antworten je Provider-Symbol, der Reihe nach (SEQ_NO)
 -- abgespielt. Platzhalter im BODY: {NOW}, {NOW-<n>M}, {YESTERDAY_NOON} (UTC, ISO 8601).
 -- HTTP_STATUS 0 simuliert einen Verbindungsfehler (systemisch, z. B. ACL/TLS).

@@ -37,7 +37,8 @@ aber nicht nach und verändert LILAM nicht.
 - Regeln je Aktie (Grenzen, EWMA-Ausreißer) und technische Regeln: `spm_rules` erzeugt und aktiviert das LILAM Rule Set,
   siehe [rules/README.md](rules/README.md).
 - Scheduler-Job `spm_job` (nicht automatisch eingeschaltet) und Statussicht `SPM_JOB_STATUS_V`.
-- Offen: Watchdog (wartet auf LILAM), Alert-Consumer, APEX-Anwendung,
+- Watchdog `spm_watchdog` (eigener Job, Schweige-Regeln über `LILAM.CHECK_SILENCE`, Zustand des Abruf-Jobs).
+- Offen: Alert-Consumer, APEX-Anwendung,
   REST-Adapter für einen echten Provider.
 
 Dokumentation: [Installation](docs/installation.md), [Integrationsmatrix](docs/integrationsmatrix.md).

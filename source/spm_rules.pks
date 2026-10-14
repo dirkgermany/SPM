@@ -4,7 +4,8 @@ create or replace package spm_rules as
     -- Das Rule Set enthält
     --   - je Symbol: VAL_MIN, VAL_MAX, VAL_EWMA_DEVIATION_PCT_UP/_DOWN auf SHARE_PRICE mit context = Symbol
     --     (nur aktive Instrumente mit aktiver Regelkonfiguration),
-    --   - technische Regeln zum Abruflauf (Grenzwerte aus SPM_CONFIG, RULE_*).
+    --   - je Symbol optional TIME_MAX_SILENCE_SECONDS (kein neuer Kurs), mit Zeitfenstern,
+    --   - technische Regeln zum Abruflauf und Watchdog (Grenzwerte aus SPM_CONFIG, RULE_*).
     -- PUBLISH prüft es mit LILAM.CHECK_RULE_SET, trägt es als neue Version in LILAM_RULES ein
     -- und aktiviert es mit LILAM.SERVER_UPDATE_RULES für die Gruppe LILAM_GROUP.
 
@@ -25,7 +26,13 @@ create or replace package spm_rules as
         p_severity_limit    varchar2 default 'ERROR',
         p_severity_ewma     varchar2 default 'WARN',
         p_throttle_seconds  number   default 3600,
-        p_is_active         varchar2 default 'Y'
+        p_is_active         varchar2 default 'Y',
+        -- Schweige-Regel: kein neuer Kurs seit p_silence_seconds; optional nur in Zeitfenstern
+        -- (JSON-Array im LILAM-Format, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}])
+        p_silence_seconds   number   default null,
+        p_silence_windows   varchar2 default null,
+        p_silence_time_zone varchar2 default null,
+        p_severity_silence  varchar2 default 'WARN'
     );
 
     procedure delete_rule(p_symbol varchar2);

@@ -13,6 +13,7 @@ Stand: 2026-10-13. Geprüft gegen den LILAM-Branch `messwerte` (`LILAM_VERSION` 
 | `VAL_EWMA_DEVIATION_PCT_UP` / `_DOWN` (`pct[|warmup[|alpha]]`, Vergleich mit EWMA **vor** der Messung) | vorhanden | Ausreißer nach oben/unten |
 | `TIME_`-Operatoren (`TIME_MAX_DURATION_MS`, `TIME_EWMA_DEVIATION_PCT_*`, `TIME_MAX_GAP_SECONDS`, …) | vorhanden | Dauer der Provider-Aufrufe, Laufzeit |
 | Regeln im In-Session-Modus über `p_groupName` | vorhanden | Scheduler-Lauf ohne Server/Dispatcher |
+| `TIME_MAX_SILENCE_SECONDS`, `CHECK_SILENCE`, Zeitfenster (`windows`, `time_zone`) | vorhanden (ab `0026955`/`6a08fba`) | Watchdog: kein Lauf, hängender Lauf, keine Kurse je Symbol |
 | `VAL_CROSS_*`, Hysterese, `DATA_STALE` | nicht vorhanden | nicht verwendet; Freshness über SPM-Watchdog |
 
 ## Identität der Messungen
@@ -45,7 +46,7 @@ Stand: 2026-10-13. Geprüft gegen den LILAM-Branch `messwerte` (`LILAM_VERSION` 
 | 10 | Abschluss | `CLOSE_PROCESS(info, status)`; Status 1 = Erfolg, 2 = teilweise, −1 = fehlgeschlagen | Prozess | – | `PROCESS_STOP` → `STATUS_EQUALS -1`, `TIME_MAX_RUNTIME_EXCEEDED` | Zusammenfassung in `LILAM_PROC.INFO` |
 | 11 | Systemischer Fehler / unerwartete Ausnahme | `ERROR` (mit Backtrace), `CLOSE_PROCESS(…, -1)`, dann `RAISE` | Prozess | – | `LOGGING` → `SEVERITY ERROR`; `PROCESS_STOP` → `STATUS_EQUALS -1` | `DBMS_SCHEDULER` registriert den Lauf als fehlgeschlagen |
 | 12 | Lauf überlappt | kein LILAM-Prozess; `SPM_RUN.STATUS = SKIPPED` | – | – | – | kein doppelter Abruf |
-| 13 | Job läuft gar nicht | – (LILAM sieht kein Signal) | – | – | – | Watchdog (geplant) vergleicht `SPM_RUN` und Scheduler-Historie mit dem Intervall |
+| 13 | Job läuft gar nicht / Lauf hängt / keine Kurse | `CHECK_SILENCE` (Watchdog-Job und jeder Abruflauf); Watchdog meldet `POLL_JOB_HEALTH` | `SPM_POLL` (Prozess), `SHARE_PRICE` / Symbol, `POLL_JOB_HEALTH` | 1 / 0 | `TIME_MAX_SILENCE_SECONDS` (`PROCESS_START`, `PROCESS_UPDATE`, `MARK_EVENT`), `VAL_MIN` | Alert ohne Prozess-ID; Zustand des Jobs aus `DBMS_SCHEDULER` |
 
 ## Hinweise und offene Punkte aus der LILAM-Prüfung
 
@@ -54,7 +55,7 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 1. **Rechte:** `docs/setup.md` nennt `DBMS_PIPE` und `DBMS_ALERT` nur für den entkoppelten Betrieb. Der Package Body referenziert beide statisch; ohne die Rechte kompiliert LILAM nicht. Im In-Session-Modus mit Gruppe signalisiert LILAM Alerts außerdem über `DBMS_ALERT`. SPM vergibt beide Rechte deshalb immer.
 2. **Drosselung je Session (in LILAM gelöst):** Bis LILAM-Commit `1bfd6ec` merkte sich LILAM die Sperre für `throttle_seconds` nur in der Datenbanksession und ohne Context; jeder Scheduler-Lauf hätte erneut gemeldet, und ein Alert für ein Symbol hätte bei Regeln ohne Context andere Symbole gesperrt. Seit `1bfd6ec` liegt die Sperre dauerhaft in `LILAM_ALERT_LOCKS`, Schlüssel Gruppe, Scope bzw. Prozess, Regel, Action und Context. SPM benötigt mindestens diesen Stand; nach LILAM-Änderungen `install/install.sql` erneut ausführen, damit der Body im Schema SPM neu kompiliert wird. Der Vorgänger für `PRECEDED_BY` gilt weiterhin je Session (in SPM nicht verwendet).
 3. **Alert-Details:** `LILAM_ALERTS` speichert weder Messwert noch Schwelle oder Baseline. Die Alert-Seite kann sie über `PROCESS_ID`, `ACTION_NAME`, `CONTEXT_NAME` und `ACTION_COUNT` aus `_MON` (`USED_VALUE`, `USED_VALUE_EWMA`) und aus dem Rule Set ergänzen. Zu verifizieren, sobald ein Alert ausgelöst wurde.
-4. **`TIME_MAX_GAP_SECONDS` über Läufe:** Ob der Abstand zum vorherigen Event auch über Prozessgrenzen gemessen wird (Baseline Scope), ist noch zu prüfen. Unabhängig davon erkennt LILAM einen ausbleibenden Lauf nicht; dafür ist der SPM-Watchdog vorgesehen.
+4. **Ausbleibende Läufe (gelöst in LILAM):** LILAM erkennt sie seit `0026955` mit `TIME_MAX_SILENCE_SECONDS`; SPM ruft `CHECK_SILENCE` aus dem Watchdog-Job und jedem Abruflauf auf (siehe [rules/README.md](../rules/README.md#watchdog)).
 5. **Regeln je Symbol (umgesetzt):** Grenzwerte je Aktie sind Regeln mit `context = Symbol`. `spm_rules.publish` erzeugt das Rule Set aus `SPM_RULE` und `SPM_CONFIG`, trägt es als neue Version in `LILAM_RULES` ein und aktiviert es mit `SERVER_UPDATE_RULES`. Ein neuer Scheduler-Lauf (neue Session) lädt es sofort, eine laufende Session spätestens nach 15 Sekunden. Warm-up und Alpha wirken je Action und Context, also je Aktie. Details: [rules/README.md](../rules/README.md).
 
 ## Umsetzungsstand
@@ -66,5 +67,5 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 | 3. Provider-Abstraktion, Mock, Schema, manueller Lauf | umgesetzt: `spm_prov`, `spm_prov_mock`, `install/20_tables.sql`, `spm_poll.run` |
 | 4. Lebenszyklus, Trace, Logging, Fehlerabschluss | umgesetzt in `spm_poll` |
 | 5. Regeln gegen die LILAM-Erweiterung | umgesetzt: `SPM_RULE`, `spm_rules` (Pflege, Generator, Veröffentlichen), technische Regeln, Demo-Rule-Set |
-| 6. Scheduler, Freshness/Watchdog, APEX | Scheduler umgesetzt (`spm_job`, `SPM_JOB_STATUS_V`); Watchdog wartet auf die LILAM-Erkennung ausbleibender Signale (`03_lilam_ausbleib_erkennung.md`); APEX offen |
-| 7. Tests | `test/run_tests.sql` (Mock): 226 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |
+| 6. Scheduler, Freshness/Watchdog, APEX | Scheduler und Watchdog umgesetzt (`spm_job`, `spm_watchdog`, `SPM_JOB_STATUS_V`, Schweige-Regeln mit `CHECK_SILENCE`); APEX offen |
+| 7. Tests | `test/run_tests.sql` (Mock): 259 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |

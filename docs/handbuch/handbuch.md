@@ -112,7 +112,7 @@ Der Überblick auf einen Blick. Die farbige Kante jeder Kachel zeigt den Zustand
 Alle beobachteten Aktien mit letztem Kurs und Abrufstatus.
 
 - **Neues Symbol:** Aktie hinzufügen
-- **Symbol anklicken:** Kursverlauf der Aktie
+- **Symbol mit dem Kurvensymbol anklicken:** Kursverlauf der Aktie mit den Buttons Bearbeiten, Regeln und Historie löschen
 - **Bearbeiten:** Stammdaten ändern oder die Aktie deaktivieren
 - **Abrufstatus:** OK, DUPLICATE (kein neuer Kurs) oder ein Fehler wie TIMEOUT oder HTTP_ERROR
 
@@ -153,7 +153,7 @@ Eine Aktie im Detail: letzter Kurs, Zeit des Kurses beim Anbieter, letzter Abruf
 
 ![Regeln](img/05_regeln.jpg)
 
-Die Regeln aller Aktien in einer Liste. **Symbol anklicken** öffnet die Regel zum Bearbeiten. **Regeln veröffentlichen** übergibt die aktuelle Fassung als neue Version an LILAM; erst dann wirken Änderungen. Unveränderte Regeln erzeugen keine neue Version.
+Die Regeln aller Aktien in einer Liste. **Symbol mit dem Schieberegler-Symbol anklicken** öffnet die Regel zum Bearbeiten. **Regeln veröffentlichen** übergibt die aktuelle Fassung als neue Version an LILAM; erst dann wirken Änderungen. Unveränderte Regeln erzeugen keine neue Version.
 
 ### Regel bearbeiten
 

@@ -163,7 +163,7 @@ Alle Regeln einer Aktie. Leere Felder bedeuten: diese Regel gibt es nicht. Das F
 
 - **Unter- und Obergrenze:** feste Grenzen in der Währung der Aktie
 - **Ausreißer nach oben und unten:** Abweichung in Prozent vom gleitenden Mittel; dazu Warm-up und Alpha (siehe Abschnitt „Ausreißer“)
-- **Schweigen nach:** Sekunden ohne neuen Kurs; mit **Zeitfenster** und **Zeitzone** nur zu Handelszeiten, z. B. `[{"days":"MON-FRI","from":"09:00","to":"17:30"}]` mit `Europe/Berlin`
+- **Schweigen nach:** Sekunden ohne neuen Kurs; mit **Zeitfenster** und **Zeitzone** nur zu Handelszeiten, z. B. `[{"days":"MON-FRI","from":"09:00","to":"17:30"}]` mit `Europe/Berlin`. Die Zeitzone wird aus einer alphabetischen Liste gewählt (Zeitzone der Börse, für US-Werte `America/New_York`)
 - **Dringlichkeit:** Hinweis, Warnung, Alarm oder Kritisch; bestimmt die Farbe der Mail (Standard: Grenzwert Alarm, Ausreißer und Schweigen Warnung)
 - **Drosselung:** Mindestabstand zwischen zwei Alerts derselben Regel
 

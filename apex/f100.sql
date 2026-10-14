@@ -2541,18 +2541,16 @@ wwv_flow_imp_page.create_page_item(
 ,p_item_sequence=>150
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000092)
 ,p_prompt=>'Zeitzone'
-,p_display_as=>'NATIVE_TEXT_FIELD'
-,p_cSize=>30
-,p_cMaxlength=>4000
+,p_display_as=>'NATIVE_SELECT_LIST'
+,p_lov=>'select time_zone d, time_zone r from spm_timezone_v order by 1'
+,p_lov_display_null=>'YES'
+,p_lov_null_text=>'- keine -'
 ,p_begin_on_new_line=>'N'
 ,p_field_template=>1609121967514267634
 ,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>'Pflicht mit Zeitfenstern, z. B. Europe/Berlin oder America/New_York.'
+,p_help_text=>unistr('Pflicht mit Zeitfenstern: Zeitzone der B\00F6rse, z. B. Europe/Berlin (XETRA) oder America/New_York (NYSE, NASDAQ). Namen nach der IANA-Zeitzonendatenbank, wie sie die Datenbank kennt.')
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'disabled', 'N',
-  'submit_when_enter_pressed', 'N',
-  'subtype', 'TEXT',
-  'trim_spaces', 'BOTH')).to_clob
+  'page_action_on_selection', 'NONE')).to_clob
 );
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(91000000000112)

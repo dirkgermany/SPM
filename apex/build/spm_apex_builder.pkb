@@ -105,7 +105,8 @@ create or replace package body spm_apex_builder as
     end region_form;
 
     function ir(p_name varchar2, p_seq number, p_sql varchar2, p_static_id varchar2,
-                p_items_to_submit varchar2 default null, p_rows number default 15) return number is
+                p_items_to_submit varchar2 default null, p_rows number default 15,
+                p_header varchar2 default null) return number is
         l_id  number := next_id;
         l_ws  number := next_raw;
     begin
@@ -120,6 +121,7 @@ create or replace package body spm_apex_builder as
             p_query_type               => 'SQL',
             p_plug_source              => p_sql,
             p_plug_source_type         => 'NATIVE_IR',
+            p_plug_header              => p_header,
             p_ajax_items_to_submit     => p_items_to_submit,
             p_prn_content_disposition  => 'ATTACHMENT',
             p_prn_units                => 'MILLIMETERS',

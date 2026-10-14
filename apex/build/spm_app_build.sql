@@ -16,8 +16,9 @@ begin
     for c in (select 1 from user_objects where object_name = 'SPM_APEX_BUILDER' and status <> 'VALID') loop
         raise_application_error(-20000, 'SPM_APEX_BUILDER ist ungültig (show errors package body spm_apex_builder)');
     end loop;
-    -- Angemeldete Benutzer bleiben beim erneuten Import angemeldet
-    apex_application_install.set_keep_sessions(true);
+    -- Bewusst ohne apex_application_install.set_keep_sessions(true): die beibehaltene Sitzung
+    -- konnte ihren Zustand danach nicht mehr entschlüsseln (ORA-28817, Testbericht).
+    null;
 end;
 /
 --------------------------------------------------------------------------------

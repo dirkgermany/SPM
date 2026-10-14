@@ -125,3 +125,5 @@ Durchsicht aller Seiten im Browser (nur lesend): alle zehn Seiten funktionieren.
 - Alpha und Prozentwerte unter 1 ohne führende Null („,2“): Formatmaske in der Regelliste, `spm_apex.fmt_num` im Regel-Formular.
 - Testprozesse erschienen in Monitoring und Dashboard (gleiche Prozessnamen wie echte Läufe). Tests verwenden jetzt `SPMTEST_POLL`, `SPMTEST_WATCHDOG`, `SPMTEST_NOTIFY`; die Laufliste blendet Läufe mit Symbolfilter `TST*` aus.
 - Tests danach: 296 bestanden. Das Kursdiagramm ist noch ungeprüft (SAP hat erst einen Kurs).
+
+Nachtrag APEX: `apex_application_install.set_keep_sessions(true)` wieder entfernt. Die beibehaltene Sitzung konnte ihren Zustand nach dem Neuimport nicht mehr entschlüsseln (ORA-28817 in `WWV_FLOW_CRYPTO`); Folgen: leere Watchlist, Formular mit falschem Datensatz. Nach einem Neuaufbau meldet man sich neu an. Neu: Button „Startseite“ in der Navigationsleiste.

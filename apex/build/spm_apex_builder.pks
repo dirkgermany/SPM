@@ -21,7 +21,8 @@ create or replace package spm_apex_builder as
 
     -- Interactive Report; Spalten mit ir_col, abschließen mit ir_end
     function ir(p_name varchar2, p_seq number, p_sql varchar2, p_static_id varchar2,
-                p_items_to_submit varchar2 default null, p_rows number default 15) return number;
+                p_items_to_submit varchar2 default null, p_rows number default 15,
+                p_header varchar2 default null) return number;
     procedure ir_col(p_column varchar2, p_label varchar2, p_type varchar2 default 'STRING',
                      p_link varchar2 default null, p_link_text varchar2 default null,
                      p_format varchar2 default null, p_hidden boolean default false,

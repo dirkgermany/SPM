@@ -18,7 +18,7 @@ In einen anderen Workspace oder unter einer anderen ID vorher `apex_application_
 
 ## Ändern
 
-`build/spm_app_build.sql` anpassen und im Ordner `apex/build` als `SPM` ausführen (`@spm_app_build.sql`); angemeldete Benutzer bleiben angemeldet. Danach `f100.sql` neu exportieren. Änderungen, die im App Builder gemacht werden, gehen beim nächsten Aufbau verloren, solange sie nicht ins Build-Skript übernommen sind.
+`build/spm_app_build.sql` anpassen und im Ordner `apex/build` als `SPM` ausführen (`@spm_app_build.sql`); danach neu anmelden. Danach `f100.sql` neu exportieren. Änderungen, die im App Builder gemacht werden, gehen beim nächsten Aufbau verloren, solange sie nicht ins Build-Skript übernommen sind.
 
 ## Seiten
 

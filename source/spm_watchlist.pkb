@@ -95,5 +95,46 @@ create or replace package body spm_watchlist as
         end if;
     end set_active;
 
+    function delete_history(p_symbol varchar2) return number is
+        l_symbol spm_instrument.symbol%type := normalize_symbol(p_symbol);
+        l_scope  varchar2(100) := spm_cfg.get_text('LILAM_BASELINE_SCOPE', 'SPM');
+        l_id     spm_instrument.instrument_id%type;
+        l_count  number;
+    begin
+        begin
+            select instrument_id into l_id from spm_instrument where symbol = l_symbol;
+        exception
+            when no_data_found then
+                raise_application_error(C_ERR, 'Symbol nicht in der Watchlist: ' || l_symbol);
+        end;
+
+        -- kein Abruflauf gleichzeitig, sonst schreibt er Kurs und Baseline sofort wieder
+        if not spm_poll.acquire_lock then
+            raise_application_error(C_ERR, 'Ein Abruflauf ist aktiv; bitte gleich noch einmal versuchen');
+        end if;
+
+        begin
+            delete from spm_price where instrument_id = l_id;
+            l_count := sql%rowcount;
+
+            update spm_instrument
+            set    last_fetch_at = null, last_fetch_status = null, last_fetch_message = null,
+                   updated_at = systimestamp
+            where  instrument_id = l_id;
+
+            lilam.reset_baseline(l_scope, spm_poll.C_ACT_SHARE_PRICE,   l_symbol);
+            lilam.reset_baseline(l_scope, spm_poll.C_ACT_QUOTE_AGE,     l_symbol);
+            lilam.reset_baseline(l_scope, spm_poll.C_ACT_PROVIDER_CALL, l_symbol);
+
+            spm_poll.release_lock;
+        exception
+            when others then
+                spm_poll.release_lock;
+                raise;
+        end;
+
+        return l_count;
+    end delete_history;
+
 end spm_watchlist;
 /

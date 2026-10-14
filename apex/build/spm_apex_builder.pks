@@ -39,7 +39,8 @@ create or replace package spm_apex_builder as
     function button(p_name varchar2, p_label varchar2, p_region number, p_seq number,
                     p_hot boolean default false, p_action varchar2 default 'SUBMIT',
                     p_url varchar2 default null, p_confirm varchar2 default null,
-                    p_position varchar2 default 'NEXT', p_icon varchar2 default null) return number;
+                    p_position varchar2 default 'NEXT', p_icon varchar2 default null,
+                    p_security_scheme number default null) return number;
 
     -- p_point: AFTER_SUBMIT oder BEFORE_HEADER
     procedure process(p_name varchar2, p_seq number, p_code varchar2, p_point varchar2 default 'AFTER_SUBMIT',

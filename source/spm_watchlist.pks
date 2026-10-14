@@ -28,5 +28,12 @@ create or replace package spm_watchlist as
 
     procedure set_active(p_symbol varchar2, p_is_active varchar2);
 
+    -- Kurshistorie eines Symbols löschen: Kurse (SPM_PRICE), Abrufstatus und die LILAM-Baselines
+    -- des Symbols (Kurs, Quote-Alter, Provider-Aufruf) im Scope LILAM_BASELINE_SCOPE; das
+    -- EWMA-Warm-up beginnt neu. Alerts und LILAM-Protokolle bleiben. Liefert die Zahl gelöschter
+    -- Kurse. Die Baselines setzt LILAM sofort (eigene Transaktion), die Kurse committet der Aufrufer.
+    -- Fehler ORA-20201: Symbol unbekannt oder ein Abruflauf ist aktiv.
+    function delete_history(p_symbol varchar2) return number;
+
 end spm_watchlist;
 /

@@ -269,7 +269,8 @@ create or replace package body spm_apex_builder as
     function button(p_name varchar2, p_label varchar2, p_region number, p_seq number,
                     p_hot boolean default false, p_action varchar2 default 'SUBMIT',
                     p_url varchar2 default null, p_confirm varchar2 default null,
-                    p_position varchar2 default 'NEXT', p_icon varchar2 default null) return number is
+                    p_position varchar2 default 'NEXT', p_icon varchar2 default null,
+                    p_security_scheme number default null) return number is
         l_id number := next_id;
     begin
         wwv_flow_imp_page.create_page_button(
@@ -286,7 +287,8 @@ create or replace package body spm_apex_builder as
             p_button_redirect_url      => p_url,
             p_confirm_message          => p_confirm,
             p_confirm_style            => case when p_confirm is not null then 'warning' end,
-            p_icon_css_classes         => p_icon);
+            p_icon_css_classes         => p_icon,
+            p_security_scheme          => p_security_scheme);
         return l_id;
     end button;
 

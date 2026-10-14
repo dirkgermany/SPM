@@ -29,7 +29,7 @@ create or replace package spm_apex_builder as
                      p_align varchar2 default null, p_html varchar2 default null);
     procedure ir_end(p_sort_column varchar2 default null, p_sort_desc boolean default false);
 
-    -- p_type: TEXT, NUMBER, SELECT, TEXTAREA, HIDDEN, DISPLAY
+    -- p_type: TEXT, NUMBER, SELECT, CHECKBOX (Y/N), TEXTAREA, HIDDEN, DISPLAY
     procedure item(p_name varchar2, p_region number, p_seq number, p_label varchar2 default null,
                    p_type varchar2 default 'TEXT', p_lov varchar2 default null, p_required boolean default false,
                    p_help varchar2 default null, p_readonly_when varchar2 default null,

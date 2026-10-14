@@ -218,6 +218,10 @@ create or replace package body spm_apex_builder as
                 l_display := 'NATIVE_SELECT_LIST';
                 l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
                     'page_action_on_selection', 'NONE')).to_clob;
+            when 'CHECKBOX' then
+                -- Standardwerte: angehakt = Y, nicht angehakt = N
+                l_display := 'NATIVE_SINGLE_CHECKBOX';
+                l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2('use_defaults', 'Y')).to_clob;
             when 'TEXTAREA' then
                 l_display := 'NATIVE_TEXTAREA';
                 l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(

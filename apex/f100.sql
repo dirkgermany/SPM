@@ -1183,7 +1183,7 @@ wwv_flow_imp_page.create_worksheet_column(
 ,p_db_column_name=>'ALERT_SEVERITY'
 ,p_display_order=>50
 ,p_column_identifier=>'E'
-,p_column_label=>'Schweregrad'
+,p_column_label=>'Dringlichkeit'
 ,p_column_type=>'STRING'
 ,p_heading_alignment=>'LEFT'
 ,p_tz_dependent=>'N'
@@ -2324,9 +2324,9 @@ wwv_flow_imp_page.create_page_item(
 ,p_name=>'P6_SEVERITY_LIMIT'
 ,p_item_sequence=>50
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Schweregrad Grenzwert'
+,p_prompt=>'Dringlichkeit Grenzwert'
 ,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL'
+,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
 ,p_begin_on_new_line=>'N'
 ,p_field_template=>1609121967514267634
 ,p_item_template_options=>'#DEFAULT#'
@@ -2369,9 +2369,9 @@ wwv_flow_imp_page.create_page_item(
 ,p_name=>'P6_SEVERITY_EWMA'
 ,p_item_sequence=>80
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>unistr('Schweregrad Ausrei\00DFer')
+,p_prompt=>unistr('Dringlichkeit Ausrei\00DFer')
 ,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL'
+,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
 ,p_begin_on_new_line=>'N'
 ,p_field_template=>1609121967514267634
 ,p_item_template_options=>'#DEFAULT#'
@@ -2429,9 +2429,9 @@ wwv_flow_imp_page.create_page_item(
 ,p_name=>'P6_SEVERITY_SILENCE'
 ,p_item_sequence=>120
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Schweregrad Schweigen'
+,p_prompt=>'Dringlichkeit Schweigen'
 ,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL'
+,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
 ,p_begin_on_new_line=>'N'
 ,p_field_template=>1609121967514267634
 ,p_item_template_options=>'#DEFAULT#'
@@ -2542,8 +2542,8 @@ wwv_flow_imp_page.create_page_process(
 '    select spm_apex.fmt_num(val_min), spm_apex.fmt_num(val_max), spm_apex.fmt_num(ewma_pct_up),',
 '           spm_apex.fmt_num(ewma_pct_down), spm_apex.fmt_num(ewma_warmup), spm_apex.fmt_num(ewma_alpha),',
 '           spm_apex.fmt_num(silence_seconds),',
-'           silence_windows, silence_time_zone, nvl(severity_limit, ''ERROR''), nvl(severity_ewma, ''WARN''),',
-'           nvl(severity_silence, ''WARN''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),',
+'           silence_windows, silence_time_zone, nvl(severity_limit, ''ALARM''), nvl(severity_ewma, ''WARNUNG''),',
+'           nvl(severity_silence, ''WARNUNG''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),',
 '           case when updated_at is null then ''Y'' else rule_active end',
 '    into   :P6_VAL_MIN, :P6_VAL_MAX, :P6_EWMA_PCT_UP, :P6_EWMA_PCT_DOWN, :P6_EWMA_WARMUP, :P6_EWMA_ALPHA,',
 '           :P6_SILENCE_SECONDS, :P6_SILENCE_WINDOWS, :P6_SILENCE_TIME_ZONE, :P6_SEVERITY_LIMIT,',
@@ -2661,7 +2661,7 @@ wwv_flow_imp_page.create_worksheet_column(
 ,p_db_column_name=>'ALERT_SEVERITY'
 ,p_display_order=>50
 ,p_column_identifier=>'E'
-,p_column_label=>'Schweregrad'
+,p_column_label=>'Dringlichkeit'
 ,p_column_type=>'STRING'
 ,p_heading_alignment=>'LEFT'
 ,p_tz_dependent=>'N'

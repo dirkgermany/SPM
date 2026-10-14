@@ -480,6 +480,43 @@ create or replace package body spm_test as
         end if;
     end t_baseline;
 
+    procedure t_delete_history is
+        r       spm_run%rowtype;
+        l_del   number;
+        l_cnt   number;
+        l_avg   number;
+        l_price number;
+    begin
+        start_case('Historie löschen: Kurse weg, Baseline beginnt neu');
+        r := run_test('TSTB');
+        l_del := spm_watchlist.delete_history('tstb');
+        commit;
+        ok(l_del >= 1, 'gelöschte Kurse: ' || l_del);
+        select count(*) into l_cnt from spm_price p join spm_instrument i on i.instrument_id = p.instrument_id
+        where  i.symbol = 'TSTB';
+        eq(0, l_cnt, 'keine Kurse mehr');
+        eq(null, fetch_status('TSTB'), 'Abrufstatus zurückgesetzt');
+        baseline('TSTB', l_cnt, l_avg);
+        eq(0, l_cnt, 'Baseline in LILAM_BASELINES zurückgesetzt');
+
+        -- nächster Lauf derselben Session: Warm-up beginnt mit dem neuen Kurs
+        r := run_test('TSTB');
+        eq(1, r.cnt_stored, 'Lauf nach dem Löschen gespeichert');
+        select max(p.price) into l_price from spm_price p join spm_instrument i on i.instrument_id = p.instrument_id
+        where  i.symbol = 'TSTB';
+        baseline('TSTB', l_cnt, l_avg);
+        eq(1, l_cnt, 'Baseline zählt neu');
+        eq(l_price, l_avg, 'EWMA = erster Kurs nach dem Löschen');
+
+        begin
+            l_del := spm_watchlist.delete_history('TSTXXX');
+            ok(false, 'unbekanntes Symbol muss scheitern');
+        exception
+            when others then
+                eq(-20201, sqlcode, 'unbekanntes Symbol: ORA-20201');
+        end;
+    end t_delete_history;
+
     procedure t_rules is
         r      spm_run%rowtype;
         l_set  clob;
@@ -1049,6 +1086,7 @@ create or replace package body spm_test as
         begin t_systemic;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_lock;      exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_baseline;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
+        begin t_delete_history; exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_rules;     exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_job;       exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_watchdog;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;

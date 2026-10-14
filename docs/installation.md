@@ -31,7 +31,7 @@ Optional eine gespeicherte SQLcl-Verbindung anlegen (das Kennwort gibst Du selbs
 conn -save spm -savepwd spm@localhost:1521/FREEPDB1
 ```
 
-Installation mit dem Pfad zum LILAM-Checkout. SPM benötigt den LILAM-Stand mit `MARK_EVENT(p_value)` (derzeit Branch `messwerte`); das Skript bricht sonst ab.
+Installation mit dem Pfad zum LILAM-Checkout. SPM benötigt LILAM ab `87bf975` (Branch `main`: `MARK_EVENT(p_value)`, `CHECK_SILENCE`, `RESET_BASELINE`); das Skript prüft das und bricht sonst ab.
 
 ```sql
 @install/install.sql C:/Users/dirk/Documents/LILAM/lilam
@@ -128,7 +128,7 @@ exec spm_job.disable_job(spm_job.watchdog_job_name)
 
 Die Schweige-Regeln (`SPM-POLL-SILENT` usw.) stehen im Rule Set; nach Änderungen an `RULE_*_SEC` in `SPM_CONFIG` `exec spm_rules.publish`. Zustand beider Jobs: `SPM_JOB_STATUS_V` (Spalten `WD_*` für den Watchdog). Details: [rules/README.md](../rules/README.md#watchdog).
 
-SPM benötigt LILAM mit `CHECK_SILENCE` (Branch `messwerte` ab `0026955`); `install/install.sql` prüft das.
+SPM benötigt LILAM mit `CHECK_SILENCE` (ab `0026955`, enthalten in `main`); `install/install.sql` prüft das.
 
 ## Zustellung von Alerts per E-Mail
 

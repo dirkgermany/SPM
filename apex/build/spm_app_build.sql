@@ -1146,6 +1146,22 @@ begin
         p_url => lnk || '6:&SESSION.::&DEBUG.:6:P6_SYMBOL:&P4_SYMBOL.');
     btn := spm_apex_builder.button('BACK', 'Watchlist', r, 30, p_action => 'REDIRECT_URL',
         p_url => lnk || '2:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
+    -- nur Administration; der Prozess prüft das Recht zusätzlich
+    btn := spm_apex_builder.button('DELETE_HISTORY', 'Historie löschen', r, 40,
+        p_confirm => 'Alle gespeicherten Kurse dieser Aktie löschen und das gleitende Mittel in LILAM zurücksetzen?'
+                  || ' Alerts bleiben erhalten. Das lässt sich nicht rückgängig machen.',
+        p_icon => 'fa-trash-o', p_security_scheme => wwv_flow_imp.id(12755904030517599));
+    spm_apex_builder.item('P4_MSG', r, 6, p_type => 'HIDDEN');
+    spm_apex_builder.process('Historie löschen', 10,
+        'begin' || chr(10)
+     || '    if not spm_apex.is_admin(:APP_USER) then' || chr(10)
+     || '        raise_application_error(-20201, ''Keine Berechtigung für die Administration'');' || chr(10)
+     || '    end if;' || chr(10)
+     || '    :P4_MSG := spm_watchlist.delete_history(:P4_SYMBOL)' || chr(10)
+     || '            || '' Kurse gelöscht, gleitendes Mittel zurückgesetzt.'';' || chr(10)
+     || '    commit;' || chr(10)
+     || 'end;',
+        p_button => btn, p_success => '&P4_MSG.');
     r := spm_apex_builder.ir('Kurshistorie', 20,
         'select quote_ts_local, price, currency, received_at, run_id, provider_code from spm_price_v where symbol = :P4_SYMBOL',
         'prices', p_items_to_submit => 'P4_SYMBOL');

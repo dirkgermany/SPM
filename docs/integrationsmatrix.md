@@ -14,6 +14,7 @@ Stand: 2026-10-13. Geprüft gegen den LILAM-Branch `messwerte` (`LILAM_VERSION` 
 | `TIME_`-Operatoren (`TIME_MAX_DURATION_MS`, `TIME_EWMA_DEVIATION_PCT_*`, `TIME_MAX_GAP_SECONDS`, …) | vorhanden | Dauer der Provider-Aufrufe, Laufzeit |
 | Regeln im In-Session-Modus über `p_groupName` | vorhanden | Scheduler-Lauf ohne Server/Dispatcher |
 | `TIME_MAX_SILENCE_SECONDS`, `CHECK_SILENCE`, Zeitfenster (`windows`, `time_zone`) | vorhanden (ab `0026955`/`6a08fba`) | Watchdog: kein Lauf, hängender Lauf, keine Kurse je Symbol |
+| `RESET_BASELINE(scope, action, context)` | vorhanden (ab `87bf975`, Branch `main`) | Historie löschen: Baselines Kurs, Quote-Alter, Provider-Aufruf je Symbol |
 | `VAL_CROSS_*`, Hysterese, `DATA_STALE` | nicht vorhanden | nicht verwendet; Freshness über SPM-Watchdog |
 
 ## Identität der Messungen

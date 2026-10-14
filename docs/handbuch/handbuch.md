@@ -147,6 +147,8 @@ Ob ein Symbol abrufbar ist, zeigt ein Probeabruf, der nichts speichert und 1 Cre
 
 Eine Aktie im Detail: letzter Kurs, Zeit des Kurses beim Anbieter, letzter Abruf und Anzahl gespeicherter Kurse. Der **Kursverlauf** zeigt die letzten 200 Kurse mit Unter- und Obergrenze als gestrichelte Linien; er erscheint ab zwei Kursen. Darunter steht die vollständige Kurshistorie. Die Buttons führen zu Stammdaten und Regeln der Aktie.
 
+**Historie löschen** (nur Administration): löscht alle gespeicherten Kurse der Aktie und setzt das gleitende Mittel in LILAM zurück; das Warm-up beginnt mit dem nächsten Kurs neu. Alerts und Protokolle bleiben erhalten. Sinnvoll, wenn eine Aktie den Provider wechselt, z. B. von simulierten zu echten Kursen: sonst erscheint der Sprung zwischen alter und neuer Reihe als Ausreißer. Läuft gerade ein Abruf, meldet SPM das; dann einfach noch einmal versuchen.
+
 ### Regeln
 
 ![Regeln](img/05_regeln.jpg)

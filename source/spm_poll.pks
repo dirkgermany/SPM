@@ -29,6 +29,11 @@ create or replace package spm_poll as
     -- Liefert die RUN_ID aus SPM_RUN.
     function run(p_trigger varchar2 default 'MANUAL', p_symbol_like varchar2 default null) return number;
 
+    -- Sperre der Abrufläufe, auch für Wartung ohne laufenden Abruf (z. B. Historie löschen).
+    -- FALSE = ein Lauf hält die Sperre. Nicht an Commit gebunden: immer freigeben.
+    function acquire_lock return boolean;
+    procedure release_lock;
+
     procedure run(p_trigger varchar2 default 'MANUAL', p_symbol_like varchar2 default null);
 
 end spm_poll;

@@ -152,3 +152,7 @@ SPM benötigt LILAM mit `CHECK_SILENCE` (Branch `messwerte` ab `0026955`); `inst
    Einmalig ohne Job (versendet alle offenen Alerts der Gruppe): `exec dbms_output.put_line(spm_notify.process_pending)`.
 
 Jeder Zustellversuch steht in `SPM_NOTIFICATION`; der Alert erhält in `LILAM_ALERTS` den Status `PROCESSED` bzw. `ERROR` (keine automatische Wiederholung). Nach `exec spm_rules.publish` enthält das Rule Set die Schweige-Regel `SPM-NOTIFY-SILENT` für den Zustell-Job.
+
+## APEX-Anwendung
+
+Workspace `SPM` mit dem Schema `SPM` (APEX-Instanzadministration, `http://localhost:8080/ords/apex_admin`), dann die Anwendung importieren: siehe [apex/README.md](../apex/README.md). Aufruf: `http://localhost:8080/ords/r/spm/spm-stock-watch`, Anmeldung mit einem Benutzer des Workspace.

@@ -67,5 +67,5 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 | 3. Provider-Abstraktion, Mock, Schema, manueller Lauf | umgesetzt: `spm_prov`, `spm_prov_mock`, `install/20_tables.sql`, `spm_poll.run` |
 | 4. Lebenszyklus, Trace, Logging, Fehlerabschluss | umgesetzt in `spm_poll` |
 | 5. Regeln gegen die LILAM-Erweiterung | umgesetzt: `SPM_RULE`, `spm_rules` (Pflege, Generator, Veröffentlichen), technische Regeln, Demo-Rule-Set |
-| 6. Scheduler, Freshness/Watchdog, APEX | Scheduler und Watchdog umgesetzt (`spm_job`, `spm_watchdog`, `SPM_JOB_STATUS_V`, Schweige-Regeln mit `CHECK_SILENCE`); APEX offen |
+| 6. Scheduler, Freshness/Watchdog, APEX | Scheduler, Watchdog und APEX-Anwendung umgesetzt (`spm_job`, `spm_watchdog`, `SPM_JOB_STATUS_V`, Schweige-Regeln mit `CHECK_SILENCE`, `apex/f100.sql`); entkoppelter Modus für APEX offen |
 | 7. Tests | `test/run_tests.sql` (Mock): 284 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |

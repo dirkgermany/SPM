@@ -39,7 +39,8 @@ aber nicht nach und verändert LILAM nicht.
 - Scheduler-Job `spm_job` (nicht automatisch eingeschaltet) und Statussicht `SPM_JOB_STATUS_V`.
 - Watchdog `spm_watchdog` (eigener Job, Schweige-Regeln über `LILAM.CHECK_SILENCE`, Zustand des Abruf-Jobs).
 - Zustellung der Alerts per E-Mail: Consumer `spm_notify` (eigener Job, `UTL_SMTP`).
-- Offen: APEX-Anwendung,
+- APEX-Anwendung „SPM Stock Watch“ (10 Seiten), siehe [apex/README.md](apex/README.md).
+- Offen: entkoppelter LILAM-Modus für APEX,
   REST-Adapter für einen echten Provider.
 
 Dokumentation: [Installation](docs/installation.md), [Integrationsmatrix](docs/integrationsmatrix.md).

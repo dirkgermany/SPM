@@ -106,3 +106,22 @@ Neu in den Tests: Sie brechen ab, wenn SPM-Jobs eingeschaltet sind oder laufen (
 | `test/run_tests.sql` | 293 bestanden, 0 fehlgeschlagen (neu: Farben je Severity und Abweichung, Überschreitung in Prozent, Regel in Worten, Schweige-Block) |
 | Vorschau | `docs/beispiele/mail_grenzwert.html` (Alert 120, `MAILTEST-MAX`) |
 | Zustell-Job | für Installation und Tests ausgeschaltet, danach wieder eingeschaltet |
+
+## 2026-10-14: APEX-Anwendung
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Datenbank-Seite (`26_apex_views.sql`, `spm_apex`) | installiert; Sichten liefern Daten; Tests 296 bestanden |
+| Aufbau mit `apex/build/spm_app_build.sql` | Import fehlerfrei (APEX 24.2) |
+| Anmeldung | scheiterte zunächst: Anmeldeseite stammte aus einer abgelaufenen Sitzung („Your session has ended“), nach Neuladen erfolgreich |
+| Dashboard, Watchlist | im Browser geprüft, Darstellung korrekt |
+| Links zu Instrument/Formularen/Alert | „Session state protection violation“: Seitenschutz „D“ bedeutet „kein Aufruf per URL“. Behoben: Standard „C“ (Prüfsumme) |
+| Neuimport | beendete zunächst die Sitzung; seitdem `apex_application_install.set_keep_sessions(true)` |
+| IR-Hilfe | Actions → Hilfe ohne Rückweg; ausgeblendet |
+
+Noch nicht im Browser geprüft: Instrument mit Diagramm, Formulare (Instrument, Regel), Regeln veröffentlichen, Alert-Vorschau, Monitoring, Administration (Aktionen mit Wirkung nur nach Absprache).
+
+Durchsicht aller Seiten im Browser (nur lesend): alle zehn Seiten funktionieren. Befunde und Korrekturen:
+- Alpha und Prozentwerte unter 1 ohne führende Null („,2“): Formatmaske in der Regelliste, `spm_apex.fmt_num` im Regel-Formular.
+- Testprozesse erschienen in Monitoring und Dashboard (gleiche Prozessnamen wie echte Läufe). Tests verwenden jetzt `SPMTEST_POLL`, `SPMTEST_WATCHDOG`, `SPMTEST_NOTIFY`; die Laufliste blendet Läufe mit Symbolfilter `TST*` aus.
+- Tests danach: 296 bestanden. Das Kursdiagramm ist noch ungeprüft (SAP hat erst einen Kurs).

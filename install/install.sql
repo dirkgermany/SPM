@@ -28,6 +28,7 @@ prompt
 prompt === SPM 2/4: Tabellen und Sichten ===
 @@20_tables.sql
 @@25_views.sql
+@@26_apex_views.sql
 
 prompt
 prompt === SPM 3/4: Pakete ===

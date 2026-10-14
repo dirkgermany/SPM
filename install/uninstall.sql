@@ -31,12 +31,14 @@ begin
     end loop;
 
     for p in (select column_value name from table(sys.odcivarchar2list(
-                  'SPM_TEST', 'SPM_JOB', 'SPM_NOTIFY', 'SPM_WATCHDOG', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
+                  'SPM_TEST', 'SPM_APEX', 'SPM_JOB', 'SPM_NOTIFY', 'SPM_WATCHDOG', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
         drop_object('package', p.name);
     end loop;
 
     if '&SPM_DROP_DATA' = 'J' then
-        drop_object('view', 'SPM_JOB_STATUS_V');
+        for v in (select view_name from user_views where view_name like 'SPM\_%' escape '\') loop
+            drop_object('view', v.view_name);
+        end loop;
         for t in (select column_value name from table(sys.odcivarchar2list(
                       'SPM_NOTIFICATION', 'SPM_RULE', 'SPM_PRICE', 'SPM_RUN', 'SPM_INSTRUMENT', 'SPM_PROVIDER', 'SPM_CONFIG',
                       'SPM_MOCK_RESPONSE', 'SPM_MOCK_STATE'))) loop

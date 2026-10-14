@@ -37,6 +37,8 @@ using (
     select 'NOTIFY_RUN_MINUTES',       '60',                  'Ein Zustell-Lauf wartet so lange auf Alerts, dann startet der Job neu' from dual union all
     select 'NOTIFY_DAYS_TO_KEEP',      '30',                  'LILAM bereinigt Zustell-Läufe, die älter sind (Tage)' from dual union all
     select 'RULE_NOTIFY_SILENCE_SEC',  '10800',               'Schweige-Regel: kein Zustell-Lauf gestartet seit (s); leer = keine Regel' from dual union all
+    -- APEX-Anwendung
+    select 'APEX_ADMIN_USERS',         null,                  'APEX-Benutzer mit Zugriff auf die Administration (Komma-Liste); leer = alle angemeldeten' from dual union all
     -- Rule Set (SPM_RULES.PUBLISH)
     select 'RULE_SET_NAME',            'SPM_RULES',           'Name des LILAM Rule Sets (LILAM_RULES.SET_NAME, max. 30 Zeichen)' from dual union all
     select 'RULE_HANDLER',             'SPM_ALERT',           'DBMS_ALERT-Kanal der Alerts (max. 30 Zeichen)' from dual union all

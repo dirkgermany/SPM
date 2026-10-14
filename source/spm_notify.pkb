@@ -37,16 +37,21 @@ create or replace package body spm_notify as
     begin
         select * into a from lilam_alerts where alert_id = p_alert_id;
 
-        -- Regel aus dem Rule Set, mit dem der Alert ausgelöst wurde
+        -- Regel aus dem Rule Set, mit dem der Alert ausgelöst wurde. JSON_TABLE statt mehrerer
+        -- JSON_VALUE mit PASSING: diese Kombination lieferte durchweg NULL (Testbericht).
         begin
-            select json_value(r.rule_set, '$.rules[*]?(@.id == $id)."_comment"'           passing a.rule_id as "id"),
-                   json_value(r.rule_set, '$.rules[*]?(@.id == $id).condition.operator' passing a.rule_id as "id"),
-                   json_value(r.rule_set, '$.rules[*]?(@.id == $id).condition.value'    passing a.rule_id as "id"),
-                   json_value(r.rule_set, '$.rules[*]?(@.id == $id).trigger_type'       passing a.rule_id as "id")
+            select jt.cmt, jt.op, jt.val, jt.trg
             into   l_comment, l_operator, l_value, l_trigger
-            from   lilam_rules r
+            from   lilam_rules r,
+                   json_table(r.rule_set, '$.rules[*]' columns (
+                       id  varchar2(50)  path '$.id',
+                       cmt varchar2(400) path '$."_comment"',
+                       op  varchar2(100) path '$.condition.operator',
+                       val varchar2(100) path '$.condition.value',
+                       trg varchar2(30)  path '$.trigger_type')) jt
             where  upper(r.group_name) = upper(a.group_name)
-            and    r.set_name = a.rule_set_name and r.version = a.rule_set_version;
+            and    r.set_name = a.rule_set_name and r.version = a.rule_set_version
+            and    jt.id = a.rule_id;
         exception
             when no_data_found or too_many_rows then null;
         end;

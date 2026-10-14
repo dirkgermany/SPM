@@ -68,3 +68,18 @@ LILAM-Checkout `messwerte` mit `cc6431c` (Erkennung ausbleibender Signale, Zeitf
 Neue Fälle: Eingabeprüfung der Schweige-Regel (Schweigezeit, Zeitfenster ohne Schweigezeit oder Zeitzone, ungültige Tage über `CHECK_RULE_SET`, kein JSON), Regeln im erzeugten Rule Set, kein Alarm beim Einschalten, Alarm nach Ablauf (Prozess ohne `PROCESS_ID` mit `PROCESS_NAME`, Reihe mit Context), offenes und geschlossenes Zeitfenster, Signale beenden das Schweigen, Zustand des Abruf-Jobs (fehlt, ausgeschaltet, in Ordnung nach Lauf), Watchdog-Lauf mit `SPM-POLLJOB-BAD`, Watchdog als Scheduler-Job.
 
 Nicht getestet: eingeschaltete Jobs über mehrere Intervalle (Dauerbetrieb nur auf Anforderung), Ausfall beider Jobs (dokumentierte Grenze), `SPM-RUN-HANG` mit echtem hängendem Lauf.
+
+## 2026-10-14: Zustellung per E-Mail (Consumer)
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Erster Versuch | Datenbank nicht erreichbar (ORA-12541, Neustart des Notebooks); Stand lokal committet |
+| `install/install.sql` mit `spm_notify`, `SPM_NOTIFICATION` | fehlerfrei |
+| `test/run_tests.sql`, Lauf 1 | 281 bestanden, 3 fehlgeschlagen: Regelangaben im Mailtext leer. Ursache: mehrere `JSON_VALUE` mit `PASSING` auf dieselbe Spalte in einer Abfrage lieferten zusammen mit dem Pfad `."_comment"` durchweg NULL, einzeln korrekt. Behoben mit `JSON_TABLE` |
+| `test/run_tests.sql`, Lauf 2 und 3 | je 284 bestanden, 0 fehlgeschlagen |
+| Nachkontrolle | Konfiguration zurückgesetzt (`MAIL_*` leer bzw. Standard), keine Jobs, keine Testgruppen, keine offenen Alerts in `STOCK_MONITORING` |
+| Netzwerk-ACL | `SPM` und `LILAM_TEST` haben keine Host-ACE; für echten Versand ist `install/01_admin_network_acl.sql` nötig |
+
+Neue Fälle: Mailtext eines Grenzwert-Alerts (Symbol, Instrument, Kurs mit Währung, Regel mit Schwelle, Prozess) und eines Schweige-Alerts ohne Prozess; ohne Absender/Empfänger bleiben Alerts offen; Transport MOCK verarbeitet alle offenen Alerts genau der konfigurierten Gruppe und protokolliert sie; SMTP-Fehler (keine ACL bzw. kein Dienst) wird als `ERROR` mit Meldung verbucht; Consumer-Lauf als LILAM-Prozess mit `NOTIFY_RESULT`; Zustell-Job anlegen.
+
+Nicht getestet: echter Versand per SMTP (erst nach ACL, Absender/Empfänger und Freigabe durch Dirk), Zustell-Job im Dauerbetrieb.

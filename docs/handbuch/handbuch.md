@@ -15,7 +15,7 @@ Gleichzeitig überwacht LILAM die Anwendung selbst: ob Abrufe laufen, wie lange 
 ### Der Weg eines Kurses
 
 1. **Abruf:** Der Abruf-Job startet im eingestellten Intervall (Standard 15 Minuten) einen Abruflauf. Jeder Lauf ist ein eigener LILAM-Prozess.
-2. **Provider:** Für jede aktive Aktie fragt SPM den Kurs beim Provider ab. Derzeit ist das der Mock-Provider mit simulierten Kursen; ein echter Anbieter folgt.
+2. **Provider:** Für jede aktive Aktie fragt SPM den Kurs beim Provider ab. Das ist entweder Twelve Data (echte Kurse über das Internet) oder der Mock-Provider (simulierte Kurse für Demo und Tests); der Provider wird je Aktie gewählt.
 3. **Prüfung:** SPM prüft Antwort, Zahlenformat, Währung und Alter des Kurses. Fehlerhafte Antworten werden protokolliert; der Lauf geht mit der nächsten Aktie weiter.
 4. **Speichern:** Neue Kurse landen in der Kurshistorie. Ein Kurs, den es schon gibt, wird nicht doppelt gespeichert.
 5. **Messwert an LILAM:** Jeder neu gespeicherte Kurs geht als Messwert an LILAM, je Aktie eine eigene Messreihe.
@@ -122,6 +122,23 @@ Alle beobachteten Aktien mit letztem Kurs und Abrufstatus.
 
 Stammdaten einer Aktie. Das Symbol ist die Kennung in SPM und lässt sich nach dem Anlegen nicht mehr ändern. Das Provider-Symbol ist die Bezeichnung beim Anbieter. Kurse in einer anderen Währung als der eingetragenen werden verworfen. Inaktive Aktien werden nicht abgerufen.
 
+**Welche Provider-Symbole gibt es bei Twelve Data?** Alle Aktien listet [twelvedata.com/stocks](https://twelvedata.com/stocks). Der Gratistarif liefert nur Aktien, die an US-Börsen gehandelt werden, in USD; deutsche Börsen wie XETRA sind nicht enthalten. Viele ausländische Firmen gibt es dort als ADR, z. B.:
+
+| Aktie | Provider-Symbol | Hinweis |
+| --- | --- | --- |
+| Apple, Microsoft, Nvidia | `AAPL`, `MSFT`, `NVDA` | US-Börse |
+| SAP, ASML | `SAP`, `ASML` | US-Börse |
+| Siemens, Allianz, Nestlé | `SIEGY`, `ALIZY`, `NSRGY` | US-Freiverkehr |
+| BMW | `BMWKY` | US-Freiverkehr, 1 Papier = 1/3 Aktie |
+
+Ob ein Symbol abrufbar ist, zeigt ein Probeabruf, der nichts speichert und 1 Credit je Symbol kostet. In SQL Developer als SPM angemeldet eingeben und mit **F5** („Skript ausführen“) starten:
+
+```
+@C:\Users\dirk\Documents\SPM\test\live_twelvedata.sql "NVDA,ASML,NSRGY"
+```
+
+`OK` heißt abrufbar (mit Kurs, Währung und Zeit); „available starting with the Grow plan“ heißt nicht im Gratistarif. Eine Aktie, die bisher mit dem Mock-Provider lief, nicht auf Twelve Data umstellen, sondern unter neuem Symbol anlegen (z. B. `SAP.US`): sonst mischen sich simulierte und echte Kurse in einer Reihe.
+
 ### Instrument
 
 ![Instrument](img/04_instrument.jpg)
@@ -182,7 +199,8 @@ Steuerung der Anwendung (nur für berechtigte Benutzer).
 
 ## 4. Gut zu wissen
 
-- **Mock-Provider:** Derzeit sind alle Kurse simuliert. Die Demo-Verläufe erzeugt `demo/simulate_prices.sql` (rund 16 Stunden im 15-Minuten-Takt, mit einem Grenzwert-Alarm bei SAP und Siemens, einem Ausreißer bei Apple und einem Abruffehler bei Microsoft); danach bewegen sich die Kurse zufällig um den letzten Wert.
+- **Twelve Data:** Der Gratistarif erlaubt 800 Abrufe am Tag und 8 pro Minute; das reicht für etwa 8 Aktien im 15-Minuten-Takt rund um die Uhr. Außerhalb der Handelszeit liefert der Anbieter den letzten Kurs erneut, der Abruf zählt dann als DUPLICATE. Werte aus dem US-Freiverkehr kommen oft erst mit einem Tag Verzögerung.
+- **Mock-Provider:** Aktien mit dem Mock-Provider erhalten simulierte Kurse. Die Demo-Verläufe erzeugt `demo/simulate_prices.sql` (rund 16 Stunden im 15-Minuten-Takt, mit einem Grenzwert-Alarm bei SAP und Siemens, einem Ausreißer bei Apple und einem Abruffehler bei Microsoft); danach bewegen sich die Kurse zufällig um den letzten Wert.
 - **Handelszeiten und Feiertage:** Schweige-Regeln kennen Zeitfenster, aber keine Feiertage. An Feiertagen meldet die Regel unter Umständen Schweigen.
 - **Keine Entwarnung:** Kommen Signale nach einem Schweige-Alert wieder, gibt es keine eigene Meldung.
 - **Sprache der Listen:** Bedienelemente wie „Actions“ und „Go“ sind englisch, solange in APEX kein deutsches Sprachpaket installiert ist.

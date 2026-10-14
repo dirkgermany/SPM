@@ -1107,7 +1107,8 @@ begin
     spm_apex_builder.item('P3_PROVIDER_CODE', r, 30, 'Provider', 'SELECT', p_required => true,
         p_lov => 'select provider_name d, provider_code r from spm_provider order by 1');
     spm_apex_builder.item('P3_PROVIDER_SYMBOL', r, 40, 'Provider-Symbol', p_required => true,
-        p_help => 'Symbol, unter dem der Provider den Kurs liefert.');
+        p_help => 'Symbol, unter dem der Provider den Kurs liefert. Twelve Data: Ticker (AAPL) oder Ticker:Börse als MIC'
+               || ' (BMW:XFRA); der Doppelpunkt ist eine SPM-Schreibweise. Im Gratistarif nur US-Börsen.');
     spm_apex_builder.item('P3_CURRENCY', r, 50, 'Währung', p_required => true,
         p_help => 'ISO-Code mit drei Buchstaben, z. B. EUR. Quotes in anderer Währung werden verworfen.');
     spm_apex_builder.item('P3_EXCHANGE', r, 60, 'Börse');

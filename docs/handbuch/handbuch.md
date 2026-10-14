@@ -131,6 +131,8 @@ Stammdaten einer Aktie. Das Symbol ist die Kennung in SPM und lässt sich nach d
 | Siemens, Allianz, Nestlé | `SIEGY`, `ALIZY`, `NSRGY` | US-Freiverkehr |
 | BMW | `BMWKY` | US-Freiverkehr, 1 Papier = 1/3 Aktie |
 
+**Schreibweise:** Ein Provider-Symbol ist entweder nur der Ticker (`AAPL`) oder Ticker und Börse, getrennt durch einen Doppelpunkt (`BMW:XFRA`). Die Börse wird als MIC angegeben, den internationalen vierstelligen Börsencode (ISO 10383), z. B. `XETR` (XETRA), `XFRA` (Frankfurt), `XNYS` (NYSE), `XNAS` (NASDAQ). Ohne Börse wählt Twelve Data die Hauptnotierung; die Börse braucht man nur, wenn derselbe Ticker an mehreren Börsen vorkommt. Der Doppelpunkt ist eine Schreibweise von SPM, nicht von Twelve Data: SPM trennt die Angabe und übergibt Ticker und Börse dem Anbieter getrennt. Für den Gratistarif genügt der Ticker, denn die deutschen Börsen sind dort ohnehin nicht enthalten.
+
 Ob ein Symbol abrufbar ist, zeigt ein Probeabruf, der nichts speichert und 1 Credit je Symbol kostet. In SQL Developer als SPM angemeldet eingeben und mit **F5** („Skript ausführen“) starten:
 
 ```

@@ -14,7 +14,7 @@ SPM (Stock Price Monitoring), Anwendung „SPM Stock Watch“: Referenzanwendung
 
 | PR | Inhalt | Stand |
 | --- | --- | --- |
-| #1–#7 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung | gemergt |
+| #1–#9 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung, Doku zu Twelve-Data-Symbolen (#8, #9) | gemergt |
 
 Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachziehen, `claude` pushen. `gh` liegt unter `C:\Program Files\GitHub CLI\gh.exe` (angemeldet als dirkgermany).
 

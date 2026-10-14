@@ -1624,7 +1624,7 @@ wwv_flow_imp_page.create_page_item(
 ,p_cMaxlength=>4000
 ,p_field_template=>1609122147107268652
 ,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>'Symbol, unter dem der Provider den Kurs liefert.'
+,p_help_text=>unistr('Symbol, unter dem der Provider den Kurs liefert. Twelve Data: Ticker (AAPL) oder Ticker:B\00F6rse als MIC (BMW:XFRA); der Doppelpunkt ist eine SPM-Schreibweise. Im Gratistarif nur US-B\00F6rsen.')
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
   'disabled', 'N',
   'submit_when_enter_pressed', 'N',

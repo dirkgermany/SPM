@@ -1046,7 +1046,7 @@ begin
         p_help => 'Überblick: Aktualität der Kurse, letzter Abruflauf, Alerts und Zustand der Jobs.');
     r := spm_apex_builder.region_html('Status', 10, 'return spm_apex.dashboard_html;', p_hide_title => true);
     r := spm_apex_builder.ir('Letzte Alerts', 20,
-        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, status, mail_status from spm_alert_v'
+        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, currency, status, mail_status from spm_alert_v'
      || ' where action_name = ''SHARE_PRICE''',
         'home_alerts', p_rows => 10);
     spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
@@ -1055,7 +1055,9 @@ begin
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol');
     spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
-    spm_apex_builder.ir_col('MEASURED_VALUE', 'Kurs', 'NUMBER', p_format => '999G999G990D00');
+    spm_apex_builder.ir_col('MEASURED_VALUE', 'Kurs', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#MEASURED_VALUE# #CURRENCY#');
+    spm_apex_builder.ir_col('CURRENCY', 'Währung', p_hidden => true);
     spm_apex_builder.ir_col('STATUS', 'Status');
     spm_apex_builder.ir_col('MAIL_STATUS', 'Mail');
     spm_apex_builder.ir_end('CREATED_AT', true);
@@ -1081,7 +1083,8 @@ begin
     spm_apex_builder.ir_col('PROVIDER_CODE', 'Provider');
     spm_apex_builder.ir_col('PROVIDER_SYMBOL', 'Provider-Symbol');
     spm_apex_builder.ir_col('IS_ACTIVE', 'Aktiv');
-    spm_apex_builder.ir_col('LAST_PRICE', 'Letzter Kurs', 'NUMBER', p_format => '999G999G990D00');
+    spm_apex_builder.ir_col('LAST_PRICE', 'Letzter Kurs', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#LAST_PRICE# #CURRENCY#');
     spm_apex_builder.ir_col('LAST_QUOTE', 'Quote-Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI');
     spm_apex_builder.ir_col('LAST_FETCH_STATUS', 'Abrufstatus');
     spm_apex_builder.ir_col('LAST_FETCH_AT', 'Letzter Abruf', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
@@ -1274,7 +1277,7 @@ begin
     spm_apex_builder.page(7, 'Alerts', 'ALERTS',
         p_help => 'Alerts der Kursregeln mit Kurs und Zustellstatus der Mail. Technische Alerts stehen im Technischen Monitoring.');
     r := spm_apex_builder.ir('Alerts', 10,
-        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, measured_ewma, status,'
+        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, measured_ewma, currency, status,'
      || ' mail_status, mail_at, process_id, process_name, error_message from spm_alert_v'
      || ' where action_name = ''SHARE_PRICE''',
         'alerts');
@@ -1284,8 +1287,11 @@ begin
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol');
     spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
-    spm_apex_builder.ir_col('MEASURED_VALUE', 'Kurs', 'NUMBER', p_format => '999G999G990D00');
-    spm_apex_builder.ir_col('MEASURED_EWMA', 'EWMA', 'NUMBER', p_format => '999G999G990D00');
+    spm_apex_builder.ir_col('MEASURED_VALUE', 'Kurs', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#MEASURED_VALUE# #CURRENCY#');
+    spm_apex_builder.ir_col('MEASURED_EWMA', 'EWMA', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#MEASURED_EWMA# #CURRENCY#');
+    spm_apex_builder.ir_col('CURRENCY', 'Währung', p_hidden => true);
     spm_apex_builder.ir_col('STATUS', 'Status');
     spm_apex_builder.ir_col('MAIL_STATUS', 'Mail');
     spm_apex_builder.ir_col('MAIL_AT', 'Mail-Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');

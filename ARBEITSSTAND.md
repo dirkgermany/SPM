@@ -1,6 +1,6 @@
 # SPM – Arbeitsstand
 
-Stand: 14.10.2026, abends. Übergabe für einen neuen Chat.
+Stand: 14.10.2026, spätabends. Übergabe für einen neuen Chat.
 
 ## Projekt
 
@@ -32,7 +32,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
   `export JAVA_HOME='C:\Program Files\Oracle\sqldeveloper\jdk\jre'; echo exit | /c/sqlcl/bin/sql.exe -S -name spm @install/install.sql C:/Users/dirk/Documents/LILAM/lilam`
 - **Vor Installation und Tests den Zustell-Job anhalten** (er belegt `spm_notify` bis zu 60 min; die Tests brechen ab, wenn SPM-Jobs eingeschaltet sind):
   `dbms_scheduler.disable('SPM_NOTIFY_JOB', force => true); dbms_scheduler.stop_job('SPM_NOTIFY_JOB');` – danach `spm_job.enable_job(spm_job.notify_job_name)`.
-- Installation: `@install/install.sql <LILAM-Checkout>` (wiederholbar). Tests: `@test/run_tests.sql` (zuletzt **296 bestanden**).
+- Installation: `@install/install.sql <LILAM-Checkout>` (wiederholbar). Tests: `@test/run_tests.sql` (zuletzt **317 bestanden**). Live-Test Twelve Data (kostet Credits): `@test/live_twelvedata.sql "AAPL,SAP"`.
 - APEX-Anwendung ändern: `apex/build/spm_app_build.sql` (im Ordner `apex/build` ausführen), danach Export `apex export -applicationid 100 -skipExportDate -expOriginalIds -overwrite-files` im Ordner `apex` → `apex/f100.sql`. **Nach jedem Neuaufbau muss Dirk sich neu anmelden** – einfach ansagen, keine Umgehung (`set_keep_sessions` führte zu ORA-28817).
 - Browser-Fenster der App: Dirk vorher sagen, wenn ich darin klicke; er soll dann nicht parallel klicken. Strg+Umschalt+B schaltet das Fenster ein/aus.
 - Echte Mails nur nach Absprache; Spam-Schutz ist aktiv (12/h, 10 s Abstand).
@@ -43,7 +43,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 | Teil | Dateien |
 | --- | --- |
 | Tabellen, Sichten, Grunddaten | `install/20_tables.sql`, `25_views.sql` (`SPM_JOB_STATUS_V`), `26_apex_views.sql`, `40_seed.sql` (`SPM_CONFIG`) |
-| Abruf | `spm_prov` (Schnittstelle), `spm_prov_mock`, `spm_poll` (Lauf = LILAM-In-Session-Prozess, Kurs als `MARK_EVENT(SHARE_PRICE, Symbol, Kurs)`) |
+| Abruf | `spm_prov` (Schnittstelle, `http_get`, `SPM_SECRET`), `spm_prov_mock`, `spm_prov_twelvedata`, `spm_poll` (Lauf = LILAM-In-Session-Prozess, Kurs als `MARK_EVENT(SHARE_PRICE, Symbol, Kurs)`) |
 | Regeln | `spm_rules` (`SPM_RULE` → LILAM Rule Set, Gruppe `STOCK_MONITORING`, `publish`) |
 | Jobs | `spm_job` (Abruf, Watchdog, Zustellung), `spm_watchdog` (`LILAM.CHECK_SILENCE`, `POLL_JOB_HEALTH`) |
 | Zustellung | `spm_notify` (DBMS_ALERT-Consumer, HTML-Mail per UTL_SMTP, `SPM_NOTIFICATION`) |
@@ -64,7 +64,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 1. **PR #7 mergen** (auf Dirks Anweisung).
 2. **Handbuch als PDF**: Text steht (`docs/handbuch/handbuch.md`). Es fehlen breite Bildschirmfotos (das Browser-Fenster ist nur ~800 px breit; Dirk zieht es breiter oder liefert Screenshots; vorhandene schmale Bilder liegen unversioniert in `docs/handbuch/img/`), dann HTML → PDF mit Edge headless (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe --headless --print-to-pdf=…`). Python ist nicht installiert.
 3. Entkoppelter LILAM-Modus (Server, Dispatcher) für APEX – später, wenn es ein echtes APEX-Board gibt.
-4. Echter Kursanbieter (REST, Wallet, ACL, Limits prüfen) – später.
+4. Echte Kurse: Twelve Data ist angebunden (ACL, Schlüssel gesetzt, Live-Abruf geprüft). Gratistarif ohne deutsche Börsen → US-Notierungen in USD (`SAP`, `SIEGY`, `ALIZY`, `BMWKY`, `AAPL`, `MSFT`). Watchlist-Einträge legt Dirk in APEX an (neue Symbole, Mock-Einträge nicht umstellen); danach Regeln anlegen, Abruf-Job einschalten.
 5. Kurzhilfe über Listen: verworfen („zu viel“), stattdessen Handbuch.
 
 ## Erkenntnisse
@@ -77,3 +77,6 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 - Lokale PL/SQL-Funktionen dürfen nicht in SQL-Anweisungen stehen (PLS-00231).
 - Aus APEX angelegte Scheduler-Jobs erhalten die Zeitzone der ORDS-Sitzung (PST8PDT); Anzeige daher mit `at time zone 'Europe/Berlin'`.
 - SQLcl in Git Bash braucht immer eine Eingabe per Pipe (`echo exit | sql …`), sonst „Unzulässige Funktion“.
+- HTTPS aus der DB: `utl_http.set_wallet('system:')` (Zertifikate des Betriebssystems der VM) reicht, kein eigenes Wallet. ACL-Privileg `http` für `api.twelvedata.com:443`.
+- Twelve Data meldet „Symbol nicht im Tarif“ mit HTTP 404 (nicht 403); Fehler kommen als `{"code":..,"status":"error"}`.
+- PowerShell: `sql.exe` ohne `JAVA_HOME` öffnet die Java-Webseite; Argument `@datei.sql` in Anführungszeichen setzen.

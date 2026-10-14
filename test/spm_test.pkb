@@ -961,6 +961,63 @@ create or replace package body spm_test as
     end t_job;
 
     ------------------------------------------------------------------------
+    -- Adapter Twelve Data: nur Auswertung der Antworten, kein Netzwerk
+    ------------------------------------------------------------------------
+    procedure t_twelvedata is
+        l_q spm_prov.t_quote;
+
+        function parse(p_status pls_integer, p_body varchar2, p_sym varchar2 default 'SAP:XETR')
+            return spm_prov.t_quote is
+        begin
+            return spm_prov_twelvedata.parse_response(p_status, p_body, p_sym);
+        end parse;
+    begin
+        start_case('Twelve Data: Antworten auswerten');
+
+        eq('https://api.twelvedata.com/quote?symbol=SAP&mic_code=XETR',
+           spm_prov_twelvedata.quote_url(null, 'SAP:XETR'), 'URL mit MIC');
+        eq('https://example.test/quote?symbol=AAPL',
+           spm_prov_twelvedata.quote_url('https://example.test/', 'AAPL'), 'URL ohne MIC');
+
+        l_q := parse(200, '{"symbol":"SAP","exchange":"XETR","currency":"EUR","close":"187.42",'
+                       || '"timestamp":1760400000,"last_quote_at":1760432400,"is_market_open":true}');
+        eq(spm_prov.C_OK, l_q.outcome, 'Erfolg: Outcome');
+        eq(187.42, l_q.price, 'Erfolg: Kurs aus close');
+        eq('EUR', l_q.currency, 'Erfolg: Währung');
+        eq('2025-10-14 09:00:00', to_char(l_q.quote_ts_utc, 'YYYY-MM-DD HH24:MI:SS'), 'Erfolg: last_quote_at');
+
+        l_q := parse(200, '{"symbol":"AAPL","currency":"USD","close":251.3,"timestamp":1760400000}', 'AAPL');
+        eq(spm_prov.C_OK, l_q.outcome, 'ohne last_quote_at: Outcome');
+        eq('2025-10-14 00:00:00', to_char(l_q.quote_ts_utc, 'YYYY-MM-DD HH24:MI:SS'), 'ohne last_quote_at: timestamp');
+
+        l_q := parse(200, '{"code":429,"message":"You have run out of API credits","status":"error"}');
+        eq(spm_prov.C_QUOTA, l_q.outcome, 'Fehler 429 im Body bei HTTP 200');
+        l_q := parse(429, '{"code":429,"message":"limit","status":"error"}');
+        eq(spm_prov.C_QUOTA, l_q.outcome, 'HTTP 429');
+        l_q := parse(401, '{"code":401,"message":"Invalid API key","status":"error"}');
+        eq(spm_prov.C_SYSTEMIC, l_q.outcome, 'HTTP 401: Schlüssel ungültig');
+        l_q := parse(403, '{"code":403,"message":"available starting with Grow","status":"error"}');
+        eq(spm_prov.C_HTTP_ERROR, l_q.outcome, 'HTTP 403: Symbol nicht im Tarif');
+        ok(l_q.message like 'HTTP 403: available%', 'HTTP 403: Meldung des Providers');
+        l_q := parse(500, '<html>Server Error</html>');
+        eq(spm_prov.C_HTTP_ERROR, l_q.outcome, 'HTTP 500 ohne JSON');
+        eq(500, l_q.http_status, 'HTTP 500: Status');
+
+        l_q := parse(200, 'kein json');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'kein JSON');
+        l_q := parse(200, '{"symbol":"SIE","currency":"EUR","close":"1","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'falsches Symbol');
+        l_q := parse(200, '{"symbol":"SAP","currency":"EUR","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'close fehlt');
+        l_q := parse(200, '{"symbol":"SAP","currency":"EUR","close":"1,5","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'close keine Zahl');
+        l_q := parse(200, '{"symbol":"SAP","close":"1.5","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'currency fehlt');
+        l_q := parse(200, '{"symbol":"SAP","currency":"EUR","close":"1.5"}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'Zeitstempel fehlt');
+    end t_twelvedata;
+
+    ------------------------------------------------------------------------
     procedure run_all is
         l_jobs varchar2(4000);
     begin
@@ -991,6 +1048,7 @@ create or replace package body spm_test as
         begin t_job;       exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_watchdog;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_notify;    exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
+        begin t_twelvedata; exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
 
         teardown;
         dbms_output.put_line('');

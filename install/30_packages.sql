@@ -8,6 +8,7 @@ set define off
 @@../source/spm_cfg.pks
 @@../source/spm_prov.pks
 @@../source/spm_prov_mock.pks
+@@../source/spm_prov_twelvedata.pks
 @@../source/spm_watchlist.pks
 @@../source/spm_poll.pks
 @@../source/spm_watchdog.pks
@@ -19,6 +20,7 @@ set define off
 @@../source/spm_cfg.pkb
 @@../source/spm_prov.pkb
 @@../source/spm_prov_mock.pkb
+@@../source/spm_prov_twelvedata.pkb
 @@../source/spm_watchlist.pkb
 @@../source/spm_poll.pkb
 @@../source/spm_rules.pkb

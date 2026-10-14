@@ -86,6 +86,7 @@ select a.alert_id,
        a.rule_set_version,
        m.used_value                        measured_value,
        m.used_value_ewma                   measured_ewma,
+       i.currency,
        n.status                            mail_status,
        n.created_at                        mail_at,
        n.error_message                     mail_error
@@ -97,6 +98,7 @@ left   join lateral (
            and    x.process_id = a.process_id and x.action = a.action_name
            and    (x.context = a.context_name or (x.context is null and a.context_name is null))
            and    x.action_count = a.action_count) m on 1 = 1
+left   join spm_instrument i on i.symbol = a.context_name and a.action_name = 'SHARE_PRICE'
 left   join lateral (
            select status, created_at, error_message from spm_notification y
            where  y.alert_id = a.alert_id

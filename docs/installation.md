@@ -21,7 +21,7 @@ Das Skript fragt das Kennwort für `SPM` ab und speichert es nicht. Es vergibt:
 | `EXECUTE ON DBMS_PIPE`, `DBMS_ALERT` | von LILAM statisch referenziert; `DBMS_ALERT` signalisiert Alerts |
 | `EXECUTE ON DBMS_LOCK` | Sperre gegen überlappende Abrufläufe |
 
-Netzwerk-ACL und Wallet für einen echten Provider kommen mit dem ersten REST-Adapter dazu.
+Netzwerk-ACL und API-Schlüssel für den echten Provider: siehe [Kursanbieter Twelve Data](#kursanbieter-twelve-data).
 
 ## 2. SPM installieren (als `SPM`)
 
@@ -152,6 +152,44 @@ SPM benötigt LILAM mit `CHECK_SILENCE` (Branch `messwerte` ab `0026955`); `inst
    Einmalig ohne Job (versendet alle offenen Alerts der Gruppe): `exec dbms_output.put_line(spm_notify.process_pending)`.
 
 Jeder Zustellversuch steht in `SPM_NOTIFICATION`; der Alert erhält in `LILAM_ALERTS` den Status `PROCESSED` bzw. `ERROR` (keine automatische Wiederholung). Nach `exec spm_rules.publish` enthält das Rule Set die Schweige-Regel `SPM-NOTIFY-SILENT` für den Zustell-Job.
+
+## Kursanbieter Twelve Data
+
+Adapter `spm_prov_twelvedata`, Endpunkt `/quote`. Der Gratistarif („Basic“, Stand 10/2026) erlaubt 800 Credits am Tag
+und 8 pro Minute, ein Symbol kostet 1 Credit. 6 Symbole alle 15 Minuten rund um die Uhr ≈ 576 Credits/Tag.
+Der Gratistarif enthält US-Börsen, aber **keine deutschen Börsen** (XETRA, Frankfurt: HTTP 404 „available starting
+with the Grow plan“). Deutsche Werte gehen gratis nur als US-Notierung in USD:
+
+| Aktie | Provider-Symbol | Hinweis |
+| --- | --- | --- |
+| SAP | `SAP` | NYSE |
+| Siemens | `SIEGY` | US-Freiverkehr (ADR), Kurs vom Vortag |
+| Allianz | `ALIZY` | US-Freiverkehr (ADR), Kurs vom Vortag |
+| BMW | `BMWKY` | US-Freiverkehr (ADR, 1/3 Aktie) |
+
+1. Netzwerk-ACL für `api.twelvedata.com:443` (einmalig, als SYS):
+   ```sql
+   @install/02_admin_provider_acl.sql
+   ```
+   Zertifikate: `UTL_HTTP` nutzt den Zertifikatsspeicher des Betriebssystems (`SPM_CONFIG` `HTTPS_WALLET` = `system:`),
+   ein eigenes Wallet ist nicht nötig. Zeitlimit: `HTTP_TIMEOUT_SECONDS`.
+2. Konto bei twelvedata.com anlegen, API-Schlüssel hinterlegen (interaktiv, Eingabe unsichtbar):
+   ```
+   sql -name spm @install/set_provider_key.sql
+   ```
+   Der Schlüssel liegt in `SPM_SECRET` (keine Sicht, keine APEX-Seite) und wird im Header
+   `Authorization: apikey …` gesendet, nie in der URL oder in Logs.
+3. Optionaler Live-Test (1 Credit je Symbol, speichert nichts):
+   ```sql
+   @test/live_twelvedata.sql "AAPL,SAP:XETR"
+   ```
+4. Watchlist: in APEX neue Einträge mit Provider „Twelve Data“, Provider-Symbol (z. B. `SAP`) und Währung `USD`
+   anlegen. Vorhandene Mock-Einträge nicht umstellen, sondern neue Symbole verwenden (z. B. `SAP.US`):
+   sonst mischen sich EUR- und USD-Kurse in einer Reihe und in der EWMA-Baseline.
+
+Fehlerabbildung: 429 = `QUOTA` (Lauf endet), 401 = `SYSTEMIC` (Schlüssel ungültig, Lauf endet), sonst `HTTP_ERROR` nur
+für das Symbol (z. B. 404 Symbol unbekannt oder nicht im Tarif). Liefert der Dienst außerhalb der Handelszeit
+denselben Quote erneut, zählt der Abruf als „doppelt“, nicht als Fehler.
 
 ## APEX-Anwendung
 

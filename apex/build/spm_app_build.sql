@@ -1212,20 +1212,20 @@ begin
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent über dem gleitenden Mittel (EWMA) vor diesem Kurs liegt.');
     spm_apex_builder.item('P6_EWMA_PCT_DOWN', r, 90, 'Ausreißer nach unten (%)', 'NUMBER', p_new_row => false,
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent unter dem gleitenden Mittel liegt.');
-    -- Zeile: Zeitfenster für Schweigen
-    spm_apex_builder.item('P6_SILENCE_WINDOWS', r, 100, 'Zeitfenster (JSON)', 'TEXTAREA',
-        p_help => 'Nur in diesen Zeiten prüfen, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}]. Leer = immer.');
-    spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 110, 'Zeitzone', p_new_row => false,
-        p_help => 'Pflicht mit Zeitfenstern, z. B. Europe/Berlin oder America/New_York.');
     -- Zeile: Parameter
-    spm_apex_builder.item('P6_EWMA_WARMUP', r, 120, 'Warm-up (Anzahl Kurse)', 'NUMBER',
+    spm_apex_builder.item('P6_EWMA_WARMUP', r, 100, 'Warm-up (Anzahl Kurse)', 'NUMBER',
         p_help => 'So viele Kurse bildet LILAM zunächst den einfachen Mittelwert und meldet keine Ausreißer. Leer = 3.');
-    spm_apex_builder.item('P6_EWMA_ALPHA', r, 130, 'Alpha (0 bis 1)', 'NUMBER', p_new_row => false,
+    spm_apex_builder.item('P6_EWMA_ALPHA', r, 110, 'Alpha (0 bis 1)', 'NUMBER', p_new_row => false,
         p_help => 'Gewicht des neuesten Kurses im gleitenden Mittel. Klein (0,1) = ruhiges Mittel, groß (0,5) = folgt schnell. Leer = 0,1.');
-    spm_apex_builder.item('P6_SILENCE_SECONDS', r, 140, 'Schweigen nach (s)', 'NUMBER', p_new_row => false,
+    spm_apex_builder.item('P6_SILENCE_SECONDS', r, 120, 'Schweigen nach (s)', 'NUMBER', p_new_row => false,
         p_help => 'Alert, wenn so lange kein neuer Kurs gespeichert wurde. Leer = keine Regel.');
-    spm_apex_builder.item('P6_THROTTLE_SECONDS', r, 150, 'Drosselung (s)', 'NUMBER', p_new_row => false,
+    spm_apex_builder.item('P6_THROTTLE_SECONDS', r, 130, 'Drosselung (s)', 'NUMBER', p_new_row => false,
         p_help => 'Nach einem Alert schweigt dieselbe Regel für dieses Symbol so lange (gilt über Abrufläufe hinweg).');
+    -- Zeile: Zeitfenster für Schweigen
+    spm_apex_builder.item('P6_SILENCE_WINDOWS', r, 140, 'Zeitfenster (JSON)', 'TEXTAREA',
+        p_help => 'Nur in diesen Zeiten prüfen, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}]. Leer = immer.');
+    spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 150, 'Zeitzone', p_new_row => false,
+        p_help => 'Pflicht mit Zeitfenstern, z. B. Europe/Berlin oder America/New_York.');
     sav := spm_apex_builder.button('SAVE', 'Speichern', r, 10, p_hot => true);
     del := spm_apex_builder.button('DELETE', 'Löschen', r, 20, p_confirm => 'Regel für dieses Symbol löschen?',
         p_position => 'DELETE');

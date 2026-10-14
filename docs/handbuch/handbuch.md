@@ -120,7 +120,7 @@ Alle beobachteten Aktien mit letztem Kurs und Abrufstatus.
 
 ![Instrument bearbeiten](img/03_instrument_bearbeiten.jpg)
 
-Stammdaten einer Aktie. Das Symbol ist die Kennung in SPM und lässt sich nach dem Anlegen nicht mehr ändern. Das Provider-Symbol ist die Bezeichnung beim Anbieter. Kurse in einer anderen Währung als der eingetragenen werden verworfen. Inaktive Aktien werden nicht abgerufen.
+Stammdaten einer Aktie. Das Symbol ist die Kennung in SPM und lässt sich nach dem Anlegen nicht mehr ändern. Das Provider-Symbol ist die Bezeichnung beim Anbieter. Kurse in einer anderen Währung als der eingetragenen werden verworfen. Der Schalter **Aktiv** legt fest, ob die Aktie abgerufen wird; er wirkt wie alle Felder erst mit **Speichern**.
 
 **Welche Provider-Symbole gibt es bei Twelve Data?** Alle Aktien listet [twelvedata.com/stocks](https://twelvedata.com/stocks). Der Gratistarif liefert nur Aktien, die an US-Börsen gehandelt werden, in USD; deutsche Börsen wie XETRA sind nicht enthalten. Viele ausländische Firmen gibt es dort als ADR, z. B.:
 

@@ -12,6 +12,10 @@ create or replace package spm_apex as
     -- (Komma-Liste); leer = alle angemeldeten Benutzer.
     function is_admin(p_user varchar2) return boolean;
 
+    -- Zahl für Formularfelder im Format der Sitzung, mit führender Null und ohne überflüssige
+    -- Nachkommastellen (0,2 statt ,2; 80 statt 80,0)
+    function fmt_num(p_value number) return varchar2;
+
     -- Zustand der Jobs für die Administration
     function job_status_html return clob;
 

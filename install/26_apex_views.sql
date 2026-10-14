@@ -124,7 +124,8 @@ select r.run_id,
        p.info     lilam_info
 from   spm_run r
 left   join lilam_proc p on p.id = r.lilam_process_id
-where  r.trigger_type <> 'TEST';
+where  r.trigger_type <> 'TEST'
+and    nvl(r.symbol_filter, '-') not like 'TST%';   -- Job-Tests laufen mit Symbolfilter TST*
 
 -- LILAM-Prozesse von SPM (Abruf, Watchdog, Zustellung), ohne Testläufe
 create or replace view spm_process_v as

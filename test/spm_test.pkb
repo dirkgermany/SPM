@@ -200,6 +200,10 @@ create or replace package body spm_test as
         g_group_rules := 'SPMTEST_' || l_stamp || '_R';
         g_group_wd    := 'SPMTEST_' || l_stamp || '_W';
         set_group(g_group_base);
+        -- Eigene Prozessnamen: Testprozesse erscheinen nicht in Dashboard und Monitoring
+        set_cfg('POLL_PROCESS_NAME',     'SPMTEST_POLL');
+        set_cfg('WATCHDOG_PROCESS_NAME', 'SPMTEST_WATCHDOG');
+        set_cfg('NOTIFY_PROCESS_NAME',   'SPMTEST_NOTIFY');
 
         for i in 1 .. C_SYMBOLS.count loop
             spm_watchlist.save_instrument(p_symbol => C_SYMBOLS(i), p_provider_code => 'MOCK',
@@ -731,8 +735,8 @@ create or replace package body spm_test as
         lilam.check_silence(g_group_wd);
         eq(1, group_alerts('SPM-POLL-SILENT'), 'SPM-POLL-SILENT');
         select count(*) into l_before from lilam_alerts
-        where  group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT' and process_id is null and process_name = 'SPM_POLL';
-        eq(1, l_before, 'ohne Prozess, process_name = SPM_POLL');
+        where  group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT' and process_id is null and process_name = 'SPMTEST_POLL';
+        eq(1, l_before, 'ohne Prozess, process_name = SPMTEST_POLL');
         eq(1, group_alerts('TSTOK-SILENT'), 'TSTOK-SILENT');
         select count(*) into l_before from lilam_alerts
         where  group_name = g_group_wd and rule_id = 'TSTOK-SILENT' and context_name = 'TSTOK';
@@ -803,7 +807,7 @@ create or replace package body spm_test as
         ok(instr(l_body, 'TSTR - Test TSTR') > 0, 'Symbol und Instrument');
         ok(instr(l_body, '150 EUR') > 0, 'Kurs mit Währung');
         ok(instr(l_body, '[VAL_MAX 100]') > 0, 'Regel mit Schwelle');
-        ok(instr(l_body, 'SPM_POLL (') > 0, 'Prozess');
+        ok(instr(l_body, 'SPMTEST_POLL (') > 0, 'Prozess');
         ok(instr(l_html, 'background:#e74c3c') > 0, 'HTML: Kopf in ERROR-Rot');
         ok(instr(l_html, '150,00 EUR') > 0, 'HTML: Kurs');
         ok(instr(l_html, '&#9650; über der Obergrenze 100,00 EUR (50,00 %)') > 0, 'HTML: Überschreitung in Prozent');
@@ -820,11 +824,11 @@ create or replace package body spm_test as
         start_case('Zustellung: Mailtext eines Schweige-Alerts ohne Prozess');
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
-        ok(instr(l_body, 'kein Prozess (SPM_POLL nicht gestartet)') > 0, 'kein Prozess');
-        ok(instr(l_subject, '[SPM] Schweigen SPM_POLL: ') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_body, 'kein Prozess (SPMTEST_POLL nicht gestartet)') > 0, 'kein Prozess');
+        ok(instr(l_subject, '[SPM] Schweigen SPMTEST_POLL: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
         ok(instr(l_html, 'border-left:6px solid #8e44ad') > 0, 'HTML: Schweigen violett');
-        ok(instr(l_html, 'kein Start von SPM_POLL') > 0, 'HTML: Schweigen in Worten');
+        ok(instr(l_html, 'kein Start von SPMTEST_POLL') > 0, 'HTML: Schweigen in Worten');
 
         start_case('Zustellung: ohne Absender/Empfänger bleiben Alerts offen');
         set_group(g_group_rules);

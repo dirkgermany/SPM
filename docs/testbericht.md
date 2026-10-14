@@ -120,3 +120,8 @@ Neu in den Tests: Sie brechen ab, wenn SPM-Jobs eingeschaltet sind oder laufen (
 | IR-Hilfe | Actions → Hilfe ohne Rückweg; ausgeblendet |
 
 Noch nicht im Browser geprüft: Instrument mit Diagramm, Formulare (Instrument, Regel), Regeln veröffentlichen, Alert-Vorschau, Monitoring, Administration (Aktionen mit Wirkung nur nach Absprache).
+
+Durchsicht aller Seiten im Browser (nur lesend): alle zehn Seiten funktionieren. Befunde und Korrekturen:
+- Alpha und Prozentwerte unter 1 ohne führende Null („,2“): Formatmaske in der Regelliste, `spm_apex.fmt_num` im Regel-Formular.
+- Testprozesse erschienen in Monitoring und Dashboard (gleiche Prozessnamen wie echte Läufe). Tests verwenden jetzt `SPMTEST_POLL`, `SPMTEST_WATCHDOG`, `SPMTEST_NOTIFY`; die Laufliste blendet Läufe mit Symbolfilter `TST*` aus.
+- Tests danach: 296 bestanden. Das Kursdiagramm ist noch ungeprüft (SAP hat erst einen Kurs).

@@ -1175,10 +1175,10 @@ begin
     spm_apex_builder.ir_col('RULE_ACTIVE', 'Aktiv');
     spm_apex_builder.ir_col('VAL_MIN', 'Untergrenze', 'NUMBER');
     spm_apex_builder.ir_col('VAL_MAX', 'Obergrenze', 'NUMBER');
-    spm_apex_builder.ir_col('EWMA_PCT_UP', 'Ausreißer + %', 'NUMBER');
-    spm_apex_builder.ir_col('EWMA_PCT_DOWN', 'Ausreißer - %', 'NUMBER');
+    spm_apex_builder.ir_col('EWMA_PCT_UP', 'Ausreißer + %', 'NUMBER', p_format => '999G990D00');
+    spm_apex_builder.ir_col('EWMA_PCT_DOWN', 'Ausreißer - %', 'NUMBER', p_format => '999G990D00');
     spm_apex_builder.ir_col('EWMA_WARMUP', 'Warm-up', 'NUMBER');
-    spm_apex_builder.ir_col('EWMA_ALPHA', 'Alpha', 'NUMBER');
+    spm_apex_builder.ir_col('EWMA_ALPHA', 'Alpha', 'NUMBER', p_format => '990D00');
     spm_apex_builder.ir_col('SILENCE_SECONDS', 'Schweigen (s)', 'NUMBER');
     spm_apex_builder.ir_col('SILENCE_WINDOWS', 'Zeitfenster');
     spm_apex_builder.ir_col('THROTTLE_SECONDS', 'Drosselung (s)', 'NUMBER');
@@ -1225,9 +1225,11 @@ begin
         p_url => lnk || '5:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
     spm_apex_builder.process('Laden', 10,
         'begin' || chr(10)
-     || '    select val_min, val_max, ewma_pct_up, ewma_pct_down, ewma_warmup, ewma_alpha, silence_seconds,' || chr(10)
+     || '    select spm_apex.fmt_num(val_min), spm_apex.fmt_num(val_max), spm_apex.fmt_num(ewma_pct_up),' || chr(10)
+     || '           spm_apex.fmt_num(ewma_pct_down), spm_apex.fmt_num(ewma_warmup), spm_apex.fmt_num(ewma_alpha),' || chr(10)
+     || '           spm_apex.fmt_num(silence_seconds),' || chr(10)
      || '           silence_windows, silence_time_zone, nvl(severity_limit, ''ERROR''), nvl(severity_ewma, ''WARN''),' || chr(10)
-     || '           nvl(severity_silence, ''WARN''), nvl(throttle_seconds, 3600),' || chr(10)
+     || '           nvl(severity_silence, ''WARN''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),' || chr(10)
      || '           case when updated_at is null then ''Y'' else rule_active end' || chr(10)
      || '    into   :P6_VAL_MIN, :P6_VAL_MAX, :P6_EWMA_PCT_UP, :P6_EWMA_PCT_DOWN, :P6_EWMA_WARMUP, :P6_EWMA_ALPHA,' || chr(10)
      || '           :P6_SILENCE_SECONDS, :P6_SILENCE_WINDOWS, :P6_SILENCE_TIME_ZONE, :P6_SEVERITY_LIMIT,' || chr(10)

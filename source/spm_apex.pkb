@@ -201,6 +201,16 @@ create or replace package body spm_apex as
             || chart_svg(w.instrument_id, r.val_min, r.val_max, w.currency);
     end instrument_html;
 
+    function fmt_num(p_value number) return varchar2 is
+        l_dec varchar2(1) := substr(to_char(0.5, 'FM0D0'), 2, 1);  -- Dezimalzeichen der Sitzung
+    begin
+        if p_value is null then
+            return null;
+        end if;
+        -- FM entfernt Nullen hinter dem Komma; bei ganzen Zahlen bleibt nur das Komma übrig
+        return rtrim(to_char(p_value, 'FM999999999999990D9999999999'), l_dec);
+    end fmt_num;
+
     function is_admin(p_user varchar2) return boolean is
         l_list varchar2(4000) := upper(replace(spm_cfg.get_text('APEX_ADMIN_USERS'), ' '));
     begin

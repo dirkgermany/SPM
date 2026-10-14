@@ -1076,7 +1076,7 @@ begin
      || ' last_fetch_status, last_fetch_at, has_rules, ''Bearbeiten'' edit_link from spm_watchlist_v',
         'watchlist');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol',
-        p_link => lnk || '4:&SESSION.::&DEBUG.:4:P4_SYMBOL:\#SYMBOL#\', p_link_text => '#SYMBOL#');
+        p_link => lnk || '4:&SESSION.::&DEBUG.:4:P4_SYMBOL:\#SYMBOL#\', p_link_text => '<span class="fa fa-line-chart" aria-hidden="true"></span> #SYMBOL#');
     spm_apex_builder.ir_col('INSTRUMENT_NAME', 'Name');
     spm_apex_builder.ir_col('CURRENCY', 'Währung');
     spm_apex_builder.ir_col('EXCHANGE', 'Börse');
@@ -1194,7 +1194,7 @@ begin
      || ' ewma_warmup, ewma_alpha, silence_seconds, silence_windows, throttle_seconds, updated_at from spm_rule_v',
         'rules');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol',
-        p_link => lnk || '6:&SESSION.::&DEBUG.:6:P6_SYMBOL:\#SYMBOL#\', p_link_text => '#SYMBOL#');
+        p_link => lnk || '6:&SESSION.::&DEBUG.:6:P6_SYMBOL:\#SYMBOL#\', p_link_text => '<span class="fa fa-sliders" aria-hidden="true"></span> #SYMBOL#');
     spm_apex_builder.ir_col('INSTRUMENT_NAME', 'Name');
     spm_apex_builder.ir_col('CURRENCY', 'Währung');
     spm_apex_builder.ir_col('RULE_ACTIVE', 'Aktiv');

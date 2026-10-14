@@ -85,6 +85,17 @@ create or replace package body spm_notify as
                end;
     end rule_text;
 
+    -- Art des Alerts für Betreff und Kopf (der Schweregrad steht nur daneben)
+    function alert_kind(m t_msg) return varchar2 is
+    begin
+        return case
+                   when m.rule_operator in ('VAL_MIN', 'VAL_MAX')         then 'Grenzwert'
+                   when m.rule_operator like 'VAL_EWMA_DEVIATION_PCT%'   then 'Ausreißer'
+                   when m.rule_operator = 'TIME_MAX_SILENCE_SECONDS'     then 'Schweigen'
+                   else 'Technik'
+               end;
+    end alert_kind;
+
     function process_text(m t_msg) return varchar2 is
     begin
         return case when m.a.process_id is null then 'kein Prozess'
@@ -179,7 +190,8 @@ create or replace package body spm_notify as
     function build_text(m t_msg) return clob is
         l_body clob;
     begin
-        l_body := 'SPM-Alert ' || m.a.rule_id || ' (' || m.a.alert_severity || ')' || utl_tcp.crlf || utl_tcp.crlf;
+        l_body := alert_kind(m) || ': ' || nvl(m.rule_comment, m.a.rule_id) || utl_tcp.crlf
+               || m.a.alert_severity || ' - Regel ' || m.a.rule_id || utl_tcp.crlf || utl_tcp.crlf;
         line(l_body, 'Zeit',     to_char(m.a.created_at, 'DD.MM.YYYY HH24:MI:SS'));
         line(l_body, 'Regel',    m.rule_comment || case when m.rule_operator is not null
                                                    then ' [' || m.rule_operator || ' ' || m.rule_value || ']' end);
@@ -270,9 +282,11 @@ create or replace package body spm_notify as
                || '<div style="max-width:640px;margin:0 auto;background:#ffffff;">' || utl_tcp.crlf
                || '<div style="background:' || l_color || ';color:#ffffff;padding:16px 20px;">'
                || '<div style="font-size:12px;letter-spacing:1px;opacity:0.9;">SPM &middot; STOCK PRICE MONITORING</div>'
-               || '<div style="font-size:20px;font-weight:bold;margin-top:4px;">' || esc(m.a.alert_severity) || ': '
+               || '<div style="font-size:20px;font-weight:bold;margin-top:4px;">' || esc(alert_kind(m)) || ': '
                || esc(nvl(m.rule_comment, m.a.rule_id)) || '</div>'
-               || '<div style="font-size:13px;margin-top:4px;">Regel ' || esc(m.a.rule_id) || ' &middot; '
+               || '<div style="font-size:13px;margin-top:6px;">'
+               || '<span style="background:rgba(255,255,255,0.25);border-radius:3px;padding:1px 6px;font-weight:bold;">'
+               || esc(m.a.alert_severity) || '</span> &middot; Regel ' || esc(m.a.rule_id) || ' &middot; '
                || esc(to_char(m.a.created_at, 'DD.MM.YYYY HH24:MI:SS')) || '</div></div>' || utl_tcp.crlf
                || '<div style="padding:4px 20px 20px 20px;">' || utl_tcp.crlf
                || highlight(m)
@@ -299,8 +313,10 @@ create or replace package body spm_notify as
     procedure build_message(p_alert_id number, o_subject out varchar2, o_body out clob, o_html out clob) is
         m t_msg := load_msg(p_alert_id);
     begin
-        o_subject := substr(spm_cfg.get_text('MAIL_SUBJECT_PREFIX', '[SPM]') || ' ' || m.a.alert_severity || ' '
-                         || m.a.rule_id || ': ' || nvl(m.rule_comment, m.a.action_name), 1, 400);
+        -- z. B. "[SPM] Grenzwert SAP: Kurs über 120 EUR"
+        o_subject := substr(spm_cfg.get_text('MAIL_SUBJECT_PREFIX', '[SPM]') || ' ' || alert_kind(m) || ' '
+                         || coalesce(m.symbol, m.a.process_name, m.a.action_name) || ': '
+                         || nvl(m.rule_comment, m.a.rule_id), 1, 400);
         o_body := build_text(m);
         o_html := build_html(m);
     end build_message;

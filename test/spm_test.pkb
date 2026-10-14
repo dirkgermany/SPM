@@ -798,7 +798,8 @@ create or replace package body spm_test as
         start_case('Zustellung: Mailtext eines Grenzwert-Alerts');
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTR-MAX';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
-        ok(instr(l_subject, 'ERROR TSTR-MAX') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_subject, '[SPM] Grenzwert TSTR: ') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_html, 'Grenzwert: ') > 0, 'HTML: Art des Alerts im Kopf');
         ok(instr(l_body, 'TSTR - Test TSTR') > 0, 'Symbol und Instrument');
         ok(instr(l_body, '150 EUR') > 0, 'Kurs mit Währung');
         ok(instr(l_body, '[VAL_MAX 100]') > 0, 'Regel mit Schwelle');
@@ -812,6 +813,7 @@ create or replace package body spm_test as
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTE-UP';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
         ok(instr(l_html, 'über dem gleitenden Mittel') > 0, 'HTML: Abweichung vom EWMA');
+        ok(instr(l_subject, '[SPM] Ausreißer TSTE: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_html, 'color:#e74c3c;font-weight:bold;">&#9650;') > 0, 'HTML: starke Abweichung rot, Pfeil nach oben');
         ok(instr(l_html, 'mehr als 5 % über dem gleitenden Mittel (EWMA)') > 0, 'HTML: Regel in Worten');
 
@@ -819,6 +821,7 @@ create or replace package body spm_test as
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
         ok(instr(l_body, 'kein Prozess (SPM_POLL nicht gestartet)') > 0, 'kein Prozess');
+        ok(instr(l_subject, '[SPM] Schweigen SPM_POLL: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
         ok(instr(l_html, 'border-left:6px solid #8e44ad') > 0, 'HTML: Schweigen violett');
         ok(instr(l_html, 'kein Start von SPM_POLL') > 0, 'HTML: Schweigen in Worten');

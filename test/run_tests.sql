@@ -10,6 +10,7 @@
 
 set serveroutput on size unlimited
 set feedback off
+set define off
 whenever sqlerror exit failure rollback
 
 prompt === Testpaket kompilieren ===

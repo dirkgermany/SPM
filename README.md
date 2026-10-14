@@ -40,7 +40,8 @@ aber nicht nach und verändert LILAM nicht.
 - Watchdog `spm_watchdog` (eigener Job, Schweige-Regeln über `LILAM.CHECK_SILENCE`, Zustand des Abruf-Jobs).
 - Zustellung der Alerts per E-Mail: Consumer `spm_notify` (eigener Job, `UTL_SMTP`).
 - APEX-Anwendung „SPM Stock Watch“ (10 Seiten), siehe [apex/README.md](apex/README.md).
-- Offen: entkoppelter LILAM-Modus für APEX,
-  REST-Adapter für einen echten Provider.
+- REST-Adapter für Twelve Data (`spm_prov_twelvedata`, HTTPS per `UTL_HTTP`, Schlüssel in `SPM_SECRET`),
+  siehe [Installation](docs/installation.md#kursanbieter-twelve-data).
+- Offen: entkoppelter LILAM-Modus für APEX.
 
 Dokumentation: [Installation](docs/installation.md), [Integrationsmatrix](docs/integrationsmatrix.md).

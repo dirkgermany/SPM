@@ -18,21 +18,21 @@ In einen anderen Workspace oder unter einer anderen ID vorher `apex_application_
 
 ## Ändern
 
-`build/spm_app_build.sql` anpassen und im Ordner `apex/build` als `SPM` ausführen (`@spm_app_build.sql`); angemeldete Benutzer bleiben angemeldet. Danach `f100.sql` neu exportieren. Änderungen, die im App Builder gemacht werden, gehen beim nächsten Aufbau verloren, solange sie nicht ins Build-Skript übernommen sind.
+`build/spm_app_build.sql` anpassen und im Ordner `apex/build` als `SPM` ausführen (`@spm_app_build.sql`); danach neu anmelden. Danach `f100.sql` neu exportieren. Änderungen, die im App Builder gemacht werden, gehen beim nächsten Aufbau verloren, solange sie nicht ins Build-Skript übernommen sind.
 
 ## Seiten
 
 | Seite | Inhalt |
 | --- | --- |
-| 1 Dashboard | Aktualität, letzter Lauf, Symbole, Alerts (24 h), Zustand der Jobs; letzte Alerts |
+| 1 Dashboard | Aktualität, letzter Lauf, Symbole, Alerts (24 h), Zustand der Jobs; letzte Alerts (nur Kursregeln) |
 | 2 Watchlist | Symbole; „Neues Symbol“; Link zu Instrument und Bearbeiten |
 | 3 Instrument bearbeiten | Formular (`spm_watchlist.save_instrument`) |
 | 4 Instrument | Kacheln, Kursverlauf als SVG mit Grenzen, Kurshistorie |
 | 5 Regeln | Regeln je Symbol; „Regeln veröffentlichen“ (`spm_rules.publish`) |
 | 6 Regel bearbeiten | Grenzwert, Ausreißer (EWMA, Warm-up, Alpha), Schweigen mit Zeitfenstern, Drosselung |
-| 7 Alerts | Alerts der SPM-Gruppe mit Messwert und Mail-Status |
+| 7 Alerts | Alerts der Kursregeln (`SHARE_PRICE`) mit Kurs und Mail-Status |
 | 8 Alert | Mail-Vorschau (`spm_notify.build_message`) |
-| 9 Technisches Monitoring | Abrufläufe, Warnungen/Fehler aus LILAM, LILAM-Prozesse |
+| 9 Technisches Monitoring | Abrufläufe, technische Alerts (`SPM-…`), Warnungen/Fehler aus LILAM, LILAM-Prozesse |
 | 10 Administration | Jobs, Abruf von Hand (In-Session), Regeln veröffentlichen; Berechtigung über `SPM_CONFIG.APEX_ADMIN_USERS` |
 
 Die Seiten lesen nur SPM-Sichten und rufen `spm_apex` auf; die Logik liegt in den SPM-Paketen. Der manuelle Abruf läuft im In-Session-Modus innerhalb eines Requests. Der entkoppelte LILAM-Modus mit Server und Dispatcher folgt für ein späteres APEX-Board.

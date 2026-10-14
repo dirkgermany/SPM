@@ -13,6 +13,10 @@ using (
     select 'MAX_QUOTE_AGE_MINUTES',    '4320',                'Ältere Quotes werden als STALE verworfen (Wochenende: 3 Tage)' from dual union all
     select 'MAX_FUTURE_SKEW_SECONDS',  '300',                 'Zulässige Abweichung eines Quote-Zeitstempels in die Zukunft' from dual union all
     select 'MOCK_VOLATILITY',          '0.01',                'Mock ohne vorbereitete Antwort: Standardabweichung je Abruf (Zufallsbewegung)' from dual union all
+    -- REST-Provider (SPM_PROV.HTTP_GET)
+    select 'HTTPS_WALLET',             'system:',             'Wallet für HTTPS (UTL_HTTP.SET_WALLET); system: = Zertifikate des Betriebssystems' from dual union all
+    select 'HTTP_TIMEOUT_SECONDS',     '10',                  'Zeitlimit eines Provider-Aufrufs (s)' from dual union all
+    select 'HTTP_MAX_BODY_CHARS',      '32000',               'Längere Provider-Antworten werden abgeschnitten (Zeichen)' from dual union all
     -- Scheduler-Job (SPM_JOB)
     select 'POLL_JOB_NAME',            'SPM_POLL_JOB',        'Name des DBMS_SCHEDULER-Jobs für den Kursabruf' from dual union all
     select 'POLL_INTERVAL_MINUTES',    '15',                  'Abrufintervall des Jobs in Minuten (1 bis 1440); Provider-Limits beachten' from dual union all
@@ -32,6 +36,8 @@ using (
     select 'MAIL_FROM',                null,                  'Absenderadresse; leer = es wird nicht versendet' from dual union all
     select 'MAIL_TO',                  null,                  'Empfänger, mehrere durch Komma getrennt; leer = es wird nicht versendet' from dual union all
     select 'MAIL_SUBJECT_PREFIX',      '[SPM]',               'Präfix des Betreffs' from dual union all
+    select 'MAIL_MAX_PER_HOUR',        '12',                  'Spam-Schutz: höchstens so viele Mails je Stunde; der Rest bleibt offen' from dual union all
+    select 'MAIL_MIN_INTERVAL_SECONDS', '10',                 'Spam-Schutz: Mindestabstand zwischen zwei Mails (s)' from dual union all
     select 'NOTIFY_JOB_NAME',          'SPM_NOTIFY_JOB',      'Name des DBMS_SCHEDULER-Jobs der Zustellung' from dual union all
     select 'NOTIFY_PROCESS_NAME',      'SPM_NOTIFY',          'LILAM-Prozessname eines Zustell-Laufs' from dual union all
     select 'NOTIFY_RUN_MINUTES',       '60',                  'Ein Zustell-Lauf wartet so lange auf Alerts, dann startet der Job neu' from dual union all
@@ -53,11 +59,15 @@ when not matched then insert (param_name, param_value, description) values (s.n,
 
 merge into spm_provider p
 using (
-    select 'MOCK' code, 'Mock-Provider (lokal, ohne Netzwerk)' name,
+    select 'MOCK' code, 'Mock-Provider (lokal, ohne Netzwerk)' name, null base_url, null cred,
            'Antworten aus SPM_MOCK_RESPONSE, sonst Zufallsbewegung. Keine echten Kurse.' note
+    from dual union all
+    select 'TWELVEDATA', 'Twelve Data', 'https://api.twelvedata.com', 'TWELVEDATA_API_KEY',
+           'REST /quote; Gratistarif 800 Credits/Tag, 8/min; Kurse je nach Börse verzögert. Provider-Symbol: Ticker oder Ticker:MIC (SAP:XETR).'
     from dual
 ) s
 on (p.provider_code = s.code)
-when not matched then insert (provider_code, provider_name, is_active, note) values (s.code, s.name, 'Y', s.note);
+when not matched then insert (provider_code, provider_name, base_url, credential_name, is_active, note)
+                      values (s.code, s.name, s.base_url, s.cred, 'Y', s.note);
 
 commit;

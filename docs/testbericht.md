@@ -125,3 +125,15 @@ Durchsicht aller Seiten im Browser (nur lesend): alle zehn Seiten funktionieren.
 - Alpha und Prozentwerte unter 1 ohne führende Null („,2“): Formatmaske in der Regelliste, `spm_apex.fmt_num` im Regel-Formular.
 - Testprozesse erschienen in Monitoring und Dashboard (gleiche Prozessnamen wie echte Läufe). Tests verwenden jetzt `SPMTEST_POLL`, `SPMTEST_WATCHDOG`, `SPMTEST_NOTIFY`; die Laufliste blendet Läufe mit Symbolfilter `TST*` aus.
 - Tests danach: 296 bestanden. Das Kursdiagramm ist noch ungeprüft (SAP hat erst einen Kurs).
+
+Nachtrag APEX: `apex_application_install.set_keep_sessions(true)` wieder entfernt. Die beibehaltene Sitzung konnte ihren Zustand nach dem Neuimport nicht mehr entschlüsseln (ORA-28817 in `WWV_FLOW_CRYPTO`); Folgen: leere Watchlist, Formular mit falschem Datensatz. Nach einem Neuaufbau meldet man sich neu an. Neu: Button „Startseite“ in der Navigationsleiste.
+
+## 2026-10-14: Dringlichkeit, Spam-Schutz, Simulation
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Dringlichkeit Hinweis/Warnung/Alarm/Kritisch (Matrix in `rules/README.md`), vorhandene Werte umgestellt | Tests 296 bestanden |
+| Spam-Schutz `MAIL_MAX_PER_HOUR` (12), `MAIL_MIN_INTERVAL_SECONDS` (10), nur beim SMTP-Versand | Mails im Abstand von genau 10 s |
+| `demo/simulate_prices.sql`: MAILTEST entfernt, 6 Aktien, 64 Abrufläufe (Auslöser SIMULATION) | Lauf 30 PARTIAL (HTTP 503 bei MSFT, gewollt); 6 Alerts: SAP-MAX, SIE-MIN (Alarm), AAPL-UP, SPM-RUN-PARTIAL, SPM-POLL-FAILED (Warnung), SPM-WATCHDOG-SILENT (Alarm, berechtigt: Watchdog-Job aus) |
+| Zustellung | 6 Mails SENT (18:47:33 bis 18:48:23) |
+| Befunde | technische Alerts mit Grenzwert-Operator hießen „Grenzwert“, Regeltexte mit Einheiten statt Werten („(s)“), „2.5 %“ mit Punkt, „EWMA“ unverständlich. Behoben: Art Grenzwert/Ausreißer/Schweigen nur für Aktienkurse, sonst „Technik“; Texte wie „Kein Abruflauf seit 45 min“, „Kurs mehr als 2,5 % über dem gleitenden Mittel“. Rule Set Version 6; Tests 296 bestanden |

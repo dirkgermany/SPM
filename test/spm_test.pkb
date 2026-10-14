@@ -805,9 +805,13 @@ create or replace package body spm_test as
         ok(instr(l_subject, '[SPM] Grenzwert TSTR: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_html, 'Grenzwert: ') > 0, 'HTML: Art des Alerts im Kopf');
         ok(instr(l_body, 'TSTR - Test TSTR') > 0, 'Symbol und Instrument');
-        ok(instr(l_body, '150 EUR') > 0, 'Kurs mit Währung');
+        ok(instr(l_body, '150,00 EUR') > 0, 'Kurs mit Währung, zwei Nachkommastellen');
         ok(instr(l_body, '[VAL_MAX 100]') > 0, 'Regel mit Schwelle');
-        ok(instr(l_body, 'SPMTEST_POLL (') > 0, 'Prozess');
+        ok(instr(l_body, 'SPMTEST_POLL (') = 0, 'Kurs-Alert ohne Prozess');
+        ok(instr(l_html, '>Info<') = 0, 'HTML: Kurs-Alert ohne Info');
+        ok(regexp_like(l_body, 'Regel / Set: +TSTR-MAX / ') and instr(l_body, 'Gruppe') = 0, 'Regel / Set statt Gruppe');
+        ok(instr(l_html, '>Regel / Set<') > instr(l_html, '>Auslöser<') and instr(l_html, '>Auslöser<') > instr(l_html, '>Kurs<'),
+           'HTML: Auslöser und Regel / Set nach dem Kurs');
         ok(instr(l_html, 'background:#e74c3c') > 0, 'HTML: Kopf in ERROR-Rot');
         ok(instr(l_html, '150,00 EUR') > 0, 'HTML: Kurs');
         ok(instr(l_html, '&#9650; über der Obergrenze 100,00 EUR (50,00 %)') > 0, 'HTML: Überschreitung in Prozent');
@@ -817,6 +821,7 @@ create or replace package body spm_test as
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTE-UP';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
         ok(instr(l_html, 'über dem gleitenden Mittel') > 0, 'HTML: Abweichung vom EWMA');
+        ok(regexp_like(l_body, '\(EWMA [0-9.]+,[0-9]{2}\)'), 'Text: EWMA mit zwei Nachkommastellen');
         ok(instr(l_subject, '[SPM] Ausreißer TSTE: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_html, 'color:#e74c3c;font-weight:bold;">&#9650;') > 0, 'HTML: starke Abweichung rot, Pfeil nach oben');
         ok(instr(l_html, 'mehr als 5 % über dem gleitenden Mittel (EWMA)') > 0, 'HTML: Regel in Worten');
@@ -824,8 +829,8 @@ create or replace package body spm_test as
         start_case('Zustellung: Mailtext eines Schweige-Alerts ohne Prozess');
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
-        ok(instr(l_body, 'kein Prozess (SPMTEST_POLL nicht gestartet)') > 0, 'kein Prozess');
-        ok(instr(l_subject, '[SPM] Schweigen SPMTEST_POLL: ') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_body, 'kein Prozess (SPMTEST_POLL nicht gestartet)') > 0, 'technischer Alert mit Prozesszeile');
+        ok(instr(l_subject, '[SPM] Technik SPMTEST_POLL: Kein Abruflauf seit 3 s') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
         ok(instr(l_html, 'border-left:6px solid #8e44ad') > 0, 'HTML: Schweigen violett');
         ok(instr(l_html, 'kein Start von SPMTEST_POLL') > 0, 'HTML: Schweigen in Worten');
@@ -961,6 +966,63 @@ create or replace package body spm_test as
     end t_job;
 
     ------------------------------------------------------------------------
+    -- Adapter Twelve Data: nur Auswertung der Antworten, kein Netzwerk
+    ------------------------------------------------------------------------
+    procedure t_twelvedata is
+        l_q spm_prov.t_quote;
+
+        function parse(p_status pls_integer, p_body varchar2, p_sym varchar2 default 'SAP:XETR')
+            return spm_prov.t_quote is
+        begin
+            return spm_prov_twelvedata.parse_response(p_status, p_body, p_sym);
+        end parse;
+    begin
+        start_case('Twelve Data: Antworten auswerten');
+
+        eq('https://api.twelvedata.com/quote?symbol=SAP&mic_code=XETR',
+           spm_prov_twelvedata.quote_url(null, 'SAP:XETR'), 'URL mit MIC');
+        eq('https://example.test/quote?symbol=AAPL',
+           spm_prov_twelvedata.quote_url('https://example.test/', 'AAPL'), 'URL ohne MIC');
+
+        l_q := parse(200, '{"symbol":"SAP","exchange":"XETR","currency":"EUR","close":"187.42",'
+                       || '"timestamp":1760400000,"last_quote_at":1760432400,"is_market_open":true}');
+        eq(spm_prov.C_OK, l_q.outcome, 'Erfolg: Outcome');
+        eq(187.42, l_q.price, 'Erfolg: Kurs aus close');
+        eq('EUR', l_q.currency, 'Erfolg: Währung');
+        eq('2025-10-14 09:00:00', to_char(l_q.quote_ts_utc, 'YYYY-MM-DD HH24:MI:SS'), 'Erfolg: last_quote_at');
+
+        l_q := parse(200, '{"symbol":"AAPL","currency":"USD","close":251.3,"timestamp":1760400000}', 'AAPL');
+        eq(spm_prov.C_OK, l_q.outcome, 'ohne last_quote_at: Outcome');
+        eq('2025-10-14 00:00:00', to_char(l_q.quote_ts_utc, 'YYYY-MM-DD HH24:MI:SS'), 'ohne last_quote_at: timestamp');
+
+        l_q := parse(200, '{"code":429,"message":"You have run out of API credits","status":"error"}');
+        eq(spm_prov.C_QUOTA, l_q.outcome, 'Fehler 429 im Body bei HTTP 200');
+        l_q := parse(429, '{"code":429,"message":"limit","status":"error"}');
+        eq(spm_prov.C_QUOTA, l_q.outcome, 'HTTP 429');
+        l_q := parse(401, '{"code":401,"message":"Invalid API key","status":"error"}');
+        eq(spm_prov.C_SYSTEMIC, l_q.outcome, 'HTTP 401: Schlüssel ungültig');
+        l_q := parse(403, '{"code":403,"message":"available starting with Grow","status":"error"}');
+        eq(spm_prov.C_HTTP_ERROR, l_q.outcome, 'HTTP 403: Symbol nicht im Tarif');
+        ok(l_q.message like 'HTTP 403: available%', 'HTTP 403: Meldung des Providers');
+        l_q := parse(500, '<html>Server Error</html>');
+        eq(spm_prov.C_HTTP_ERROR, l_q.outcome, 'HTTP 500 ohne JSON');
+        eq(500, l_q.http_status, 'HTTP 500: Status');
+
+        l_q := parse(200, 'kein json');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'kein JSON');
+        l_q := parse(200, '{"symbol":"SIE","currency":"EUR","close":"1","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'falsches Symbol');
+        l_q := parse(200, '{"symbol":"SAP","currency":"EUR","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'close fehlt');
+        l_q := parse(200, '{"symbol":"SAP","currency":"EUR","close":"1,5","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'close keine Zahl');
+        l_q := parse(200, '{"symbol":"SAP","close":"1.5","timestamp":1760400000}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'currency fehlt');
+        l_q := parse(200, '{"symbol":"SAP","currency":"EUR","close":"1.5"}');
+        eq(spm_prov.C_PARSE_ERROR, l_q.outcome, 'Zeitstempel fehlt');
+    end t_twelvedata;
+
+    ------------------------------------------------------------------------
     procedure run_all is
         l_jobs varchar2(4000);
     begin
@@ -991,6 +1053,7 @@ create or replace package body spm_test as
         begin t_job;       exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_watchdog;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_notify;    exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
+        begin t_twelvedata; exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
 
         teardown;
         dbms_output.put_line('');

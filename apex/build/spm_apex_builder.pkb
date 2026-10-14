@@ -8,6 +8,12 @@ create or replace package body spm_apex_builder as
     C_TPL_LABEL    constant number := 1609121967514267634;  -- Optional
     C_TPL_LABEL_R  constant number := 1609122147107268652;  -- Required
 
+    -- Seiten-CSS: "Startseite" in der Navigationsleiste als heller Button
+    C_PAGE_CSS constant varchar2(1000) :=
+           '.spm-home .t-Button--navBar { background: #ffffff; border-radius: 4px; margin: 0 8px; padding: 4px 12px; }' || chr(10)
+        || '.spm-home .t-Button--navBar .t-Icon, .spm-home .t-Button--navBar .t-Button-label { color: #0b5cad; font-weight: bold; }' || chr(10)
+        || '.spm-home .t-Button--navBar:hover { background: #e8f1fb; }';
+
     g_next       number;
     g_page       number;
     g_ws_cols    varchar2(4000);
@@ -42,6 +48,7 @@ create or replace package body spm_apex_builder as
             p_step_title            => nvl(p_title, p_name),
             p_autocomplete_on_off   => 'OFF',
             p_page_template_options => '#DEFAULT#',
+            p_inline_css            => C_PAGE_CSS,
             p_protection_level      => p_protection,
             p_page_is_public_y_n    => case when p_public then 'Y' else 'N' end,
             p_required_role         => p_required_role,
@@ -98,7 +105,8 @@ create or replace package body spm_apex_builder as
     end region_form;
 
     function ir(p_name varchar2, p_seq number, p_sql varchar2, p_static_id varchar2,
-                p_items_to_submit varchar2 default null, p_rows number default 15) return number is
+                p_items_to_submit varchar2 default null, p_rows number default 15,
+                p_header varchar2 default null) return number is
         l_id  number := next_id;
         l_ws  number := next_raw;
     begin
@@ -113,6 +121,7 @@ create or replace package body spm_apex_builder as
             p_query_type               => 'SQL',
             p_plug_source              => p_sql,
             p_plug_source_type         => 'NATIVE_IR',
+            p_plug_header              => p_header,
             p_ajax_items_to_submit     => p_items_to_submit,
             p_prn_content_disposition  => 'ATTACHMENT',
             p_prn_units                => 'MILLIMETERS',
@@ -209,6 +218,14 @@ create or replace package body spm_apex_builder as
                 l_display := 'NATIVE_SELECT_LIST';
                 l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
                     'page_action_on_selection', 'NONE')).to_clob;
+            when 'CHECKBOX' then
+                -- Standardwerte: angehakt = Y, nicht angehakt = N
+                l_display := 'NATIVE_SINGLE_CHECKBOX';
+                l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2('use_defaults', 'Y')).to_clob;
+            when 'SWITCH' then
+                -- An = Y, Aus = N
+                l_display := 'NATIVE_YES_NO';
+                l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2('use_defaults', 'Y')).to_clob;
             when 'TEXTAREA' then
                 l_display := 'NATIVE_TEXTAREA';
                 l_attr := wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
@@ -295,6 +312,47 @@ create or replace package body spm_apex_builder as
             p_internal_uid             => l_raw);
     end process;
 
+    procedure da_change(p_name varchar2, p_seq number, p_item varchar2, p_code varchar2,
+                        p_refresh_region number default null) is
+        l_event number := next_id;
+    begin
+        wwv_flow_imp_page.create_page_da_event(
+            p_id                       => l_event,
+            p_name                     => p_name,
+            p_event_sequence           => p_seq,
+            p_triggering_element_type  => 'ITEM',
+            p_triggering_element       => p_item,
+            p_bind_type                => 'bind',
+            p_execution_type           => 'IMMEDIATE',
+            p_bind_event_type          => 'change');
+        -- Feld senden, Code ausführen, Feld zurückgeben (ohne erneutes change-Ereignis)
+        wwv_flow_imp_page.create_page_da_action(
+            p_id                       => next_id,
+            p_event_id                 => l_event,
+            p_event_result             => 'TRUE',
+            p_action_sequence          => 10,
+            p_execute_on_page_init     => 'N',
+            p_action                   => 'NATIVE_EXECUTE_PLSQL_CODE',
+            p_attribute_01             => p_code,
+            p_attribute_02             => p_item,
+            p_attribute_03             => p_item,
+            p_attribute_04             => 'Y',
+            p_attribute_05             => 'PLSQL',
+            p_wait_for_result          => 'Y');
+        if p_refresh_region is not null then
+            wwv_flow_imp_page.create_page_da_action(
+                p_id                       => next_id,
+                p_event_id                 => l_event,
+                p_event_result             => 'TRUE',
+                p_action_sequence          => 20,
+                p_execute_on_page_init     => 'N',
+                p_action                   => 'NATIVE_REFRESH',
+                p_affected_elements_type   => 'REGION',
+                p_affected_region_id       => p_refresh_region,
+                p_attribute_01             => 'N');
+        end if;
+    end da_change;
+
     procedure branch(p_seq number, p_page number, p_button number default null, p_items varchar2 default null) is
     begin
         wwv_flow_imp_page.create_page_branch(
@@ -321,6 +379,20 @@ create or replace package body spm_apex_builder as
             p_list_item_current_type      => 'COLON_DELIMITED_PAGE_LIST',
             p_list_item_current_for_pages => nvl(p_current_pages, to_char(p_page)));
     end nav;
+
+    procedure navbar(p_list_id number, p_seq number, p_label varchar2, p_page number, p_icon varchar2,
+                     p_css_class varchar2 default null) is
+    begin
+        wwv_flow_imp_shared.create_list_item(
+            p_id                          => next_id,
+            p_list_id                     => p_list_id,
+            p_list_item_display_sequence  => p_seq,
+            p_list_item_link_text         => p_label,
+            p_list_item_link_target       => 'f?p=&APP_ID.:' || p_page || ':&APP_SESSION.::&DEBUG.:::',
+            p_list_item_icon              => p_icon,
+            p_list_text_02                => p_css_class,
+            p_list_item_current_type      => 'TARGET_PAGE');
+    end navbar;
 
 end spm_apex_builder;
 /

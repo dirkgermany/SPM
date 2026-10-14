@@ -21,14 +21,15 @@ create or replace package spm_apex_builder as
 
     -- Interactive Report; Spalten mit ir_col, abschließen mit ir_end
     function ir(p_name varchar2, p_seq number, p_sql varchar2, p_static_id varchar2,
-                p_items_to_submit varchar2 default null, p_rows number default 15) return number;
+                p_items_to_submit varchar2 default null, p_rows number default 15,
+                p_header varchar2 default null) return number;
     procedure ir_col(p_column varchar2, p_label varchar2, p_type varchar2 default 'STRING',
                      p_link varchar2 default null, p_link_text varchar2 default null,
                      p_format varchar2 default null, p_hidden boolean default false,
                      p_align varchar2 default null, p_html varchar2 default null);
     procedure ir_end(p_sort_column varchar2 default null, p_sort_desc boolean default false);
 
-    -- p_type: TEXT, NUMBER, SELECT, TEXTAREA, HIDDEN, DISPLAY
+    -- p_type: TEXT, NUMBER, SELECT, CHECKBOX (Y/N), SWITCH (Y/N), TEXTAREA, HIDDEN, DISPLAY
     procedure item(p_name varchar2, p_region number, p_seq number, p_label varchar2 default null,
                    p_type varchar2 default 'TEXT', p_lov varchar2 default null, p_required boolean default false,
                    p_help varchar2 default null, p_readonly_when varchar2 default null,
@@ -45,10 +46,19 @@ create or replace package spm_apex_builder as
                       p_button number default null, p_success varchar2 default null,
                       p_condition_plsql varchar2 default null);
 
+    -- Dynamic Action: bei Änderung von p_item PL/SQL ausführen (p_item wird gesendet und
+    -- zurückgegeben), danach optional eine Region auffrischen
+    procedure da_change(p_name varchar2, p_seq number, p_item varchar2, p_code varchar2,
+                        p_refresh_region number default null);
+
     procedure branch(p_seq number, p_page number, p_button number default null, p_items varchar2 default null);
 
     procedure nav(p_list_id number, p_seq number, p_label varchar2, p_page number, p_icon varchar2,
                   p_current_pages varchar2 default null);
+
+    -- Eintrag in der Navigationsleiste (oben rechts); p_css_class an der Listenzeile
+    procedure navbar(p_list_id number, p_seq number, p_label varchar2, p_page number, p_icon varchar2,
+                     p_css_class varchar2 default null);
 
 end spm_apex_builder;
 /

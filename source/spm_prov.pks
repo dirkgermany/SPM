@@ -39,5 +39,20 @@ create or replace package spm_prov as
     -- Kürzt und entfernt Schlüssel/Token (apikey=..., token=...) aus Diagnosetexten
     function sanitize(p_text varchar2, p_max_len pls_integer default 400) return varchar2;
 
+    -- Geheimnis (API-Schlüssel) zum Provider unter SPM_PROVIDER.CREDENTIAL_NAME;
+    -- NULL/leer löscht. GET_SECRET liefert NULL, wenn keins hinterlegt ist.
+    procedure set_secret(p_provider_code varchar2, p_secret varchar2);
+    function get_secret(p_provider_code varchar2) return varchar2;
+
+    -- HTTPS-GET. Setzt HTTP_STATUS in p_quote und liefert den Body (höchstens
+    -- HTTP_MAX_BODY_CHARS Zeichen). Transportfehler: OUTCOME TIMEOUT bzw. SYSTEMIC
+    -- (ACL, TLS, DNS, Verbindung), Body NULL. Der Auth-Header wird nie protokolliert.
+    procedure http_get(
+        p_url         varchar2,
+        p_auth_header varchar2,
+        p_quote       in out nocopy t_quote,
+        o_body        out nocopy clob
+    );
+
 end spm_prov;
 /

@@ -16,8 +16,9 @@ begin
     for c in (select 1 from user_objects where object_name = 'SPM_APEX_BUILDER' and status <> 'VALID') loop
         raise_application_error(-20000, 'SPM_APEX_BUILDER ist ungültig (show errors package body spm_apex_builder)');
     end loop;
-    -- Angemeldete Benutzer bleiben beim erneuten Import angemeldet
-    apex_application_install.set_keep_sessions(true);
+    -- Bewusst ohne apex_application_install.set_keep_sessions(true): die beibehaltene Sitzung
+    -- konnte ihren Zustand danach nicht mehr entschlüsseln (ORA-28817, Testbericht).
+    null;
 end;
 /
 --------------------------------------------------------------------------------
@@ -1035,6 +1036,9 @@ begin
     spm_apex_builder.nav(wwv_flow_imp.id(12751279693517464), 50, 'Technisches Monitoring', 9, 'fa-heartbeat');
     spm_apex_builder.nav(wwv_flow_imp.id(12751279693517464), 60, 'Administration',        10, 'fa-cogs');
 
+    -- Navigationsleiste oben rechts: Startseite vor dem Benutzermenü
+    spm_apex_builder.navbar(wwv_flow_imp.id(12752330931517537), 5, 'Startseite', 1, 'fa-home', 'spm-home');
+
     --------------------------------------------------------------------------
     -- 1 Dashboard
     --------------------------------------------------------------------------
@@ -1042,15 +1046,18 @@ begin
         p_help => 'Überblick: Aktualität der Kurse, letzter Abruflauf, Alerts und Zustand der Jobs.');
     r := spm_apex_builder.region_html('Status', 10, 'return spm_apex.dashboard_html;', p_hide_title => true);
     r := spm_apex_builder.ir('Letzte Alerts', 20,
-        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, status, mail_status from spm_alert_v',
+        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, currency, status, mail_status from spm_alert_v'
+     || ' where action_name = ''SHARE_PRICE''',
         'home_alerts', p_rows => 10);
     spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
-        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID:\#ALERT_ID#\', p_link_text => '#ALERT_ID#');
+        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID,P8_FROM:\#ALERT_ID#\,1', p_link_text => '<span class="fa fa-envelope-o" aria-hidden="true"></span> #ALERT_ID#');
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol');
-    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Schweregrad');
-    spm_apex_builder.ir_col('MEASURED_VALUE', 'Messwert', 'NUMBER');
+    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
+    spm_apex_builder.ir_col('MEASURED_VALUE', 'Kurs', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#MEASURED_VALUE# #CURRENCY#');
+    spm_apex_builder.ir_col('CURRENCY', 'Währung', p_hidden => true);
     spm_apex_builder.ir_col('STATUS', 'Status');
     spm_apex_builder.ir_col('MAIL_STATUS', 'Mail');
     spm_apex_builder.ir_end('CREATED_AT', true);
@@ -1076,7 +1083,8 @@ begin
     spm_apex_builder.ir_col('PROVIDER_CODE', 'Provider');
     spm_apex_builder.ir_col('PROVIDER_SYMBOL', 'Provider-Symbol');
     spm_apex_builder.ir_col('IS_ACTIVE', 'Aktiv');
-    spm_apex_builder.ir_col('LAST_PRICE', 'Letzter Kurs', 'NUMBER', p_format => '999G999G990D00');
+    spm_apex_builder.ir_col('LAST_PRICE', 'Letzter Kurs', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#LAST_PRICE# #CURRENCY#');
     spm_apex_builder.ir_col('LAST_QUOTE', 'Quote-Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI');
     spm_apex_builder.ir_col('LAST_FETCH_STATUS', 'Abrufstatus');
     spm_apex_builder.ir_col('LAST_FETCH_AT', 'Letzter Abruf', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
@@ -1191,33 +1199,37 @@ begin
     spm_apex_builder.page(6, 'Regel bearbeiten', 'RULE-EDIT');
     r := spm_apex_builder.region_form('Regel', 10);
     spm_apex_builder.item('P6_SYMBOL', r, 10, 'Symbol', 'DISPLAY');
-    spm_apex_builder.item('P6_RULE_ACTIVE', r, 20, 'Aktiv', 'SELECT', p_lov => 'STATIC2:Ja;Y,Nein;N', p_new_row => false);
-    spm_apex_builder.item('P6_VAL_MIN', r, 30, 'Untergrenze', 'NUMBER',
+    spm_apex_builder.item('P6_RULE_ACTIVE', r, 20, 'Aktiv', 'CHECKBOX', p_new_row => false);
+    -- Zeile: Dringlichkeiten
+    spm_apex_builder.item('P6_SEVERITY_LIMIT', r, 30, 'Dringlichkeit Grenzwert', 'SELECT',
+        p_lov => 'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH');
+    spm_apex_builder.item('P6_SEVERITY_EWMA', r, 40, 'Dringlichkeit Ausreißer', 'SELECT', p_new_row => false,
+        p_lov => 'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH');
+    spm_apex_builder.item('P6_SEVERITY_SILENCE', r, 50, 'Dringlichkeit Schweigen', 'SELECT', p_new_row => false,
+        p_lov => 'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH');
+    -- Zeile: Grenzen und Ausreißer
+    spm_apex_builder.item('P6_VAL_MIN', r, 60, 'Untergrenze', 'NUMBER',
         p_help => 'Grenzwert: Alert, wenn der Kurs darunter liegt (die Grenze selbst löst nicht aus). Leer = keine Regel.');
-    spm_apex_builder.item('P6_VAL_MAX', r, 40, 'Obergrenze', 'NUMBER', p_new_row => false,
+    spm_apex_builder.item('P6_VAL_MAX', r, 70, 'Obergrenze', 'NUMBER', p_new_row => false,
         p_help => 'Grenzwert: Alert, wenn der Kurs darüber liegt. Leer = keine Regel.');
-    spm_apex_builder.item('P6_SEVERITY_LIMIT', r, 50, 'Schweregrad Grenzwert', 'SELECT', p_new_row => false,
-        p_lov => 'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL');
-    spm_apex_builder.item('P6_EWMA_PCT_UP', r, 60, 'Ausreißer nach oben (%)', 'NUMBER',
+    spm_apex_builder.item('P6_EWMA_PCT_UP', r, 80, 'Ausreißer nach oben (%)', 'NUMBER', p_new_row => false,
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent über dem gleitenden Mittel (EWMA) vor diesem Kurs liegt.');
-    spm_apex_builder.item('P6_EWMA_PCT_DOWN', r, 70, 'Ausreißer nach unten (%)', 'NUMBER', p_new_row => false,
+    spm_apex_builder.item('P6_EWMA_PCT_DOWN', r, 90, 'Ausreißer nach unten (%)', 'NUMBER', p_new_row => false,
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent unter dem gleitenden Mittel liegt.');
-    spm_apex_builder.item('P6_SEVERITY_EWMA', r, 80, 'Schweregrad Ausreißer', 'SELECT', p_new_row => false,
-        p_lov => 'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL');
-    spm_apex_builder.item('P6_EWMA_WARMUP', r, 90, 'Warm-up (Anzahl Kurse)', 'NUMBER',
+    -- Zeile: Parameter
+    spm_apex_builder.item('P6_EWMA_WARMUP', r, 100, 'Warm-up (Anzahl Kurse)', 'NUMBER',
         p_help => 'So viele Kurse bildet LILAM zunächst den einfachen Mittelwert und meldet keine Ausreißer. Leer = 3.');
-    spm_apex_builder.item('P6_EWMA_ALPHA', r, 100, 'Alpha (0 bis 1)', 'NUMBER', p_new_row => false,
+    spm_apex_builder.item('P6_EWMA_ALPHA', r, 110, 'Alpha (0 bis 1)', 'NUMBER', p_new_row => false,
         p_help => 'Gewicht des neuesten Kurses im gleitenden Mittel. Klein (0,1) = ruhiges Mittel, groß (0,5) = folgt schnell. Leer = 0,1.');
-    spm_apex_builder.item('P6_SILENCE_SECONDS', r, 110, 'Schweigen nach (s)', 'NUMBER',
+    spm_apex_builder.item('P6_SILENCE_SECONDS', r, 120, 'Schweigen nach (s)', 'NUMBER', p_new_row => false,
         p_help => 'Alert, wenn so lange kein neuer Kurs gespeichert wurde. Leer = keine Regel.');
-    spm_apex_builder.item('P6_SEVERITY_SILENCE', r, 120, 'Schweregrad Schweigen', 'SELECT', p_new_row => false,
-        p_lov => 'STATIC2:INFO;INFO,WARN;WARN,ERROR;ERROR,CRITICAL;CRITICAL');
-    spm_apex_builder.item('P6_SILENCE_WINDOWS', r, 130, 'Zeitfenster (JSON)', 'TEXTAREA',
-        p_help => 'Nur in diesen Zeiten prüfen, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}]. Leer = immer.');
-    spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 140, 'Zeitzone', p_new_row => false,
-        p_help => 'Pflicht mit Zeitfenstern, z. B. Europe/Berlin oder America/New_York.');
-    spm_apex_builder.item('P6_THROTTLE_SECONDS', r, 150, 'Drosselung (s)', 'NUMBER',
+    spm_apex_builder.item('P6_THROTTLE_SECONDS', r, 130, 'Drosselung (s)', 'NUMBER', p_new_row => false,
         p_help => 'Nach einem Alert schweigt dieselbe Regel für dieses Symbol so lange (gilt über Abrufläufe hinweg).');
+    -- Zeile: Zeitfenster für Schweigen
+    spm_apex_builder.item('P6_SILENCE_WINDOWS', r, 140, 'Zeitfenster (JSON)', 'TEXTAREA',
+        p_help => 'Nur in diesen Zeiten prüfen, z. B. [{"days":"MON-FRI","from":"09:00","to":"17:30"}]. Leer = immer.');
+    spm_apex_builder.item('P6_SILENCE_TIME_ZONE', r, 150, 'Zeitzone', p_new_row => false,
+        p_help => 'Pflicht mit Zeitfenstern, z. B. Europe/Berlin oder America/New_York.');
     sav := spm_apex_builder.button('SAVE', 'Speichern', r, 10, p_hot => true);
     del := spm_apex_builder.button('DELETE', 'Löschen', r, 20, p_confirm => 'Regel für dieses Symbol löschen?',
         p_position => 'DELETE');
@@ -1228,8 +1240,8 @@ begin
      || '    select spm_apex.fmt_num(val_min), spm_apex.fmt_num(val_max), spm_apex.fmt_num(ewma_pct_up),' || chr(10)
      || '           spm_apex.fmt_num(ewma_pct_down), spm_apex.fmt_num(ewma_warmup), spm_apex.fmt_num(ewma_alpha),' || chr(10)
      || '           spm_apex.fmt_num(silence_seconds),' || chr(10)
-     || '           silence_windows, silence_time_zone, nvl(severity_limit, ''ERROR''), nvl(severity_ewma, ''WARN''),' || chr(10)
-     || '           nvl(severity_silence, ''WARN''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),' || chr(10)
+     || '           silence_windows, silence_time_zone, nvl(severity_limit, ''ALARM''), nvl(severity_ewma, ''WARNUNG''),' || chr(10)
+     || '           nvl(severity_silence, ''WARNUNG''), spm_apex.fmt_num(nvl(throttle_seconds, 3600)),' || chr(10)
      || '           case when updated_at is null then ''Y'' else rule_active end' || chr(10)
      || '    into   :P6_VAL_MIN, :P6_VAL_MAX, :P6_EWMA_PCT_UP, :P6_EWMA_PCT_DOWN, :P6_EWMA_WARMUP, :P6_EWMA_ALPHA,' || chr(10)
      || '           :P6_SILENCE_SECONDS, :P6_SILENCE_WINDOWS, :P6_SILENCE_TIME_ZONE, :P6_SEVERITY_LIMIT,' || chr(10)
@@ -1263,19 +1275,23 @@ begin
     -- 7 Alerts
     --------------------------------------------------------------------------
     spm_apex_builder.page(7, 'Alerts', 'ALERTS',
-        p_help => 'Alerts aus LILAM_ALERTS für die SPM-Gruppe, mit Messwert und Zustellstatus der Mail.');
+        p_help => 'Alerts der Kursregeln mit Kurs und Zustellstatus der Mail. Technische Alerts stehen im Technischen Monitoring.');
     r := spm_apex_builder.ir('Alerts', 10,
-        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, measured_ewma, status,'
-     || ' mail_status, mail_at, process_id, process_name, error_message from spm_alert_v',
+        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, measured_ewma, currency, status,'
+     || ' mail_status, mail_at, process_id, process_name, error_message from spm_alert_v'
+     || ' where action_name = ''SHARE_PRICE''',
         'alerts');
     spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
-        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID:\#ALERT_ID#\', p_link_text => '#ALERT_ID#');
+        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID,P8_FROM:\#ALERT_ID#\,7', p_link_text => '<span class="fa fa-envelope-o" aria-hidden="true"></span> #ALERT_ID#');
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
-    spm_apex_builder.ir_col('SYMBOL', 'Symbol / Context');
-    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Schweregrad');
-    spm_apex_builder.ir_col('MEASURED_VALUE', 'Messwert', 'NUMBER');
-    spm_apex_builder.ir_col('MEASURED_EWMA', 'EWMA', 'NUMBER');
+    spm_apex_builder.ir_col('SYMBOL', 'Symbol');
+    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
+    spm_apex_builder.ir_col('MEASURED_VALUE', 'Kurs', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#MEASURED_VALUE# #CURRENCY#');
+    spm_apex_builder.ir_col('MEASURED_EWMA', 'EWMA', 'NUMBER', p_format => '999G999G990D00',
+        p_html => '#MEASURED_EWMA# #CURRENCY#');
+    spm_apex_builder.ir_col('CURRENCY', 'Währung', p_hidden => true);
     spm_apex_builder.ir_col('STATUS', 'Status');
     spm_apex_builder.ir_col('MAIL_STATUS', 'Mail');
     spm_apex_builder.ir_col('MAIL_AT', 'Mail-Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
@@ -1290,14 +1306,16 @@ begin
     spm_apex_builder.page(8, 'Alert', 'ALERT', 'Alert &P8_ALERT_ID.');
     r := spm_apex_builder.region_html('Mail', 10, 'return spm_apex.alert_mail_html(:P8_ALERT_ID);', 'P8_ALERT_ID');
     spm_apex_builder.item('P8_ALERT_ID', r, 5, p_type => 'HIDDEN');
-    btn := spm_apex_builder.button('BACK', 'Alerts', r, 10, p_action => 'REDIRECT_URL',
-        p_url => lnk || '7:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
+    -- Herkunftsseite (1, 7 oder 9) für "Zurück"
+    spm_apex_builder.item('P8_FROM', r, 6, p_type => 'HIDDEN');
+    btn := spm_apex_builder.button('BACK', 'Zurück', r, 10, p_action => 'REDIRECT_URL',
+        p_url => lnk || '&P8_FROM.:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
 
     --------------------------------------------------------------------------
     -- 9 Technisches Monitoring
     --------------------------------------------------------------------------
     spm_apex_builder.page(9, 'Technisches Monitoring', 'MONITORING',
-        p_help => 'Abrufläufe, LILAM-Prozesse von Abruf, Watchdog und Zustellung sowie deren Warnungen und Fehler.');
+        p_help => 'Abrufläufe, technische Alerts, LILAM-Prozesse von Abruf, Watchdog und Zustellung sowie deren Warnungen und Fehler.');
     r := spm_apex_builder.ir('Abrufläufe', 10,
         'select run_id, trigger_type, started_at, duration_s, status, cnt_active, cnt_requested, cnt_fetched,'
      || ' cnt_failed, cnt_stored, cnt_duplicate, lilam_process_id, message from spm_run_v',
@@ -1316,6 +1334,21 @@ begin
     spm_apex_builder.ir_col('LILAM_PROCESS_ID', 'LILAM-Prozess', 'NUMBER');
     spm_apex_builder.ir_col('MESSAGE', 'Meldung');
     spm_apex_builder.ir_end('RUN_ID', true);
+    r := spm_apex_builder.ir('Technische Alerts', 15,
+        'select alert_id, created_at, rule_id, symbol, alert_severity, measured_value, status, mail_status, process_name'
+     || ' from spm_alert_v where action_name is null or action_name <> ''SHARE_PRICE''',
+        'tech_alerts', p_rows => 10);
+    spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
+        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID,P8_FROM:\#ALERT_ID#\,9', p_link_text => '<span class="fa fa-envelope-o" aria-hidden="true"></span> #ALERT_ID#');
+    spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
+    spm_apex_builder.ir_col('RULE_ID', 'Regel');
+    spm_apex_builder.ir_col('SYMBOL', 'Context');
+    spm_apex_builder.ir_col('ALERT_SEVERITY', 'Dringlichkeit');
+    spm_apex_builder.ir_col('MEASURED_VALUE', 'Messwert', 'NUMBER');
+    spm_apex_builder.ir_col('STATUS', 'Status');
+    spm_apex_builder.ir_col('MAIL_STATUS', 'Mail');
+    spm_apex_builder.ir_col('PROCESS_NAME', 'Prozessname');
+    spm_apex_builder.ir_end('CREATED_AT', true);
     r := spm_apex_builder.ir('Warnungen und Fehler', 20,
         'select session_time, process_name, process_id, log_level, info from spm_problem_v',
         'problems', p_rows => 10);
@@ -1351,25 +1384,27 @@ begin
     btn := spm_apex_builder.button('PUBLISH', 'Regeln veröffentlichen', r, 20);
     spm_apex_builder.process('Regeln', 20, ':P10_MSG := spm_apex.publish_rules;', p_button => btn, p_success => '&P10_MSG.');
 
+    -- Schalter wirken sofort (Dynamic Action), danach wird die Job-Tabelle aufgefrischt
     r2 := spm_apex_builder.region_form('Jobs schalten', 20);
-    btn := spm_apex_builder.button('POLL_ON', 'Kursabruf an', r2, 10);
-    spm_apex_builder.process('Kursabruf an', 30, 'spm_apex.set_job(''POLL'', true);', p_button => btn,
-        p_success => 'Kursabruf eingeschaltet.');
-    btn := spm_apex_builder.button('POLL_OFF', 'Kursabruf aus', r2, 20, p_confirm => 'Kursabruf ausschalten?');
-    spm_apex_builder.process('Kursabruf aus', 40, 'spm_apex.set_job(''POLL'', false);', p_button => btn,
-        p_success => 'Kursabruf ausgeschaltet.');
-    btn := spm_apex_builder.button('WD_ON', 'Watchdog an', r2, 30);
-    spm_apex_builder.process('Watchdog an', 50, 'spm_apex.set_job(''WATCHDOG'', true);', p_button => btn,
-        p_success => 'Watchdog eingeschaltet.');
-    btn := spm_apex_builder.button('WD_OFF', 'Watchdog aus', r2, 40, p_confirm => 'Watchdog ausschalten?');
-    spm_apex_builder.process('Watchdog aus', 60, 'spm_apex.set_job(''WATCHDOG'', false);', p_button => btn,
-        p_success => 'Watchdog ausgeschaltet.');
-    btn := spm_apex_builder.button('NT_ON', 'Zustellung an', r2, 50);
-    spm_apex_builder.process('Zustellung an', 70, 'spm_apex.set_job(''NOTIFY'', true);', p_button => btn,
-        p_success => 'Zustellung eingeschaltet.');
-    btn := spm_apex_builder.button('NT_OFF', 'Zustellung aus', r2, 60, p_confirm => 'Zustellung ausschalten?');
-    spm_apex_builder.process('Zustellung aus', 80, 'spm_apex.set_job(''NOTIFY'', false);', p_button => btn,
-        p_success => 'Zustellung ausgeschaltet.');
+    spm_apex_builder.item('P10_JOB_POLL', r2, 10, 'Kursabruf', 'SWITCH',
+        p_help => 'Legt den Abruf-Job bei Bedarf an und schaltet ihn ein oder aus.');
+    spm_apex_builder.item('P10_JOB_WATCHDOG', r2, 20, 'Watchdog', 'SWITCH', p_new_row => false,
+        p_help => 'Nur zusammen mit dem Kursabruf einschalten.');
+    spm_apex_builder.item('P10_JOB_NOTIFY', r2, 30, 'Zustellung', 'SWITCH', p_new_row => false,
+        p_help => 'Verschickt die Mails zu den Alerts.');
+    spm_apex_builder.process('Jobs laden', 10,
+        ':P10_JOB_POLL     := spm_apex.job_enabled(''POLL'');' || chr(10)
+     || ':P10_JOB_WATCHDOG := spm_apex.job_enabled(''WATCHDOG'');' || chr(10)
+     || ':P10_JOB_NOTIFY   := spm_apex.job_enabled(''NOTIFY'');', p_point => 'BEFORE_HEADER');
+    spm_apex_builder.da_change('Kursabruf schalten', 10, 'P10_JOB_POLL',
+        'spm_apex.set_job(''POLL'', :P10_JOB_POLL = ''Y'');' || chr(10)
+     || ':P10_JOB_POLL := spm_apex.job_enabled(''POLL'');', r);
+    spm_apex_builder.da_change('Watchdog schalten', 20, 'P10_JOB_WATCHDOG',
+        'spm_apex.set_job(''WATCHDOG'', :P10_JOB_WATCHDOG = ''Y'');' || chr(10)
+     || ':P10_JOB_WATCHDOG := spm_apex.job_enabled(''WATCHDOG'');', r);
+    spm_apex_builder.da_change('Zustellung schalten', 30, 'P10_JOB_NOTIFY',
+        'spm_apex.set_job(''NOTIFY'', :P10_JOB_NOTIFY = ''Y'');' || chr(10)
+     || ':P10_JOB_NOTIFY := spm_apex.job_enabled(''NOTIFY'');', r);
 end;
 /
 prompt --application/pages/page_09999

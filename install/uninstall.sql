@@ -31,7 +31,7 @@ begin
     end loop;
 
     for p in (select column_value name from table(sys.odcivarchar2list(
-                  'SPM_TEST', 'SPM_APEX', 'SPM_JOB', 'SPM_NOTIFY', 'SPM_WATCHDOG', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
+                  'SPM_TEST', 'SPM_APEX', 'SPM_JOB', 'SPM_NOTIFY', 'SPM_WATCHDOG', 'SPM_RULES', 'SPM_POLL', 'SPM_WATCHLIST', 'SPM_PROV_TWELVEDATA', 'SPM_PROV_MOCK', 'SPM_PROV', 'SPM_CFG'))) loop
         drop_object('package', p.name);
     end loop;
 
@@ -40,7 +40,7 @@ begin
             drop_object('view', v.view_name);
         end loop;
         for t in (select column_value name from table(sys.odcivarchar2list(
-                      'SPM_NOTIFICATION', 'SPM_RULE', 'SPM_PRICE', 'SPM_RUN', 'SPM_INSTRUMENT', 'SPM_PROVIDER', 'SPM_CONFIG',
+                      'SPM_NOTIFICATION', 'SPM_RULE', 'SPM_PRICE', 'SPM_RUN', 'SPM_INSTRUMENT', 'SPM_PROVIDER', 'SPM_SECRET', 'SPM_CONFIG',
                       'SPM_MOCK_RESPONSE', 'SPM_MOCK_STATE'))) loop
             drop_object('table', t.name || ' purge');
         end loop;

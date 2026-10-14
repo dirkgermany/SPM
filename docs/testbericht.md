@@ -37,3 +37,34 @@ Umgebung wie oben; LILAM-Checkout `messwerte` mit `1bfd6ec` (dauerhafte Drosselu
 Neue Fälle: Eingabeprüfung der Regelpflege (Grenzen, Prozent, Alpha, Warm-up, Severity, unbekanntes Symbol), erzeugtes Rule Set (Werte, keine Regel für inaktive Instrumente, technische Regeln, `CHECK_RULE_SET`), Versionierung (unverändert keine neue Version), `VAL_MAX`/`VAL_MIN` mit Context und Gruppe im Alert, EWMA-Ausreißer nach oben und unten nach dem Warm-up, Drosselung über einen Abruflauf in eigener Session (`DBMS_SCHEDULER`-Job), technische Regeln bei Fehlschlag und Teilerfolg.
 
 Die Tests laufen in eigenen LILAM-Gruppen (`SPMTEST_<Zeitstempel>_A` bzw. `_R`), damit echte Regeln nicht greifen und Testalerts keine echten Sperren setzen. Die Regeltests brauchen eine zweite Gruppe, weil eine Session die Regeln einer bereits benutzten Gruppe bis zu 15 Sekunden zwischenspeichert.
+
+## 2026-10-14: Scheduler-Job
+
+| Schritt | Ergebnis |
+| --- | --- |
+| `install/install.sql` mit `spm_job`, `SPM_JOB_STATUS_V` | fehlerfrei |
+| `test/run_tests.sql`, Lauf 1 | 226 bestanden, 0 fehlgeschlagen |
+| Befund | Die Sicht zeigte als letzten Lauf den Testlauf mit simuliertem Fehler. Behoben: Die Sicht berücksichtigt nur Läufe über die ganze Watchlist (ohne Symbolfilter) |
+| `test/run_tests.sql`, Lauf 2 | 226 bestanden, 0 fehlgeschlagen |
+| Nachkontrolle | kein `SPM_*`-Job übrig, `POLL_JOB_NAME` und `LILAM_GROUP` zurückgesetzt; Job-Historie des Testjobs: `SUCCEEDED/0`, `FAILED/20110` |
+
+Neue Fälle: Eingabeprüfung (Intervall, Job-Name, fehlender Job), Anlegen und Ändern ohne Einschalten, echter Lauf über `DBMS_SCHEDULER.RUN_JOB` in eigener Session (`SUCCEEDED`, Abruflauf `SUCCESS`, LILAM-Prozess geschlossen), systemischer Fehler im Job (Historie `FAILED` mit 20110, Abruflauf `FAILED`, LILAM-Prozess mit Status −1 geschlossen), Statussicht mit und ohne Job, Entfernen.
+
+Nicht getestet: ein eingeschalteter Job im Zeitplan über mehrere Intervalle (Dauerbetrieb nur auf Anforderung).
+
+## 2026-10-14: Watchdog
+
+LILAM-Checkout `messwerte` mit `cc6431c` (Erkennung ausbleibender Signale, Zeitfenster, `LILAM_ALERT_STATE`).
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Neuinstallation mit neuem LILAM-Stand, vorhandene Tests | 226 bestanden; Anpassung: Testaufräumen nutzt `LILAM_ALERT_STATE` statt `LILAM_ALERT_LOCKS` |
+| `install/install.sql` mit Watchdog | drei Befunde behoben: `ALTER TABLE … ADD IF NOT EXISTS` für Spalten nicht angenommen (ORA-02000, ersetzt durch PL/SQL-Block); vorhandenes JSON-Constraint meldet ORA-40664 statt ORA-02264; `SPM_TEST` wird durch geänderte Abhängigkeiten ungültig und gehört nicht in die Installationsprüfung |
+| `test/run_tests.sql`, Lauf 1 | 259 bestanden, 0 fehlgeschlagen |
+| `test/run_tests.sql`, Lauf 2 | 259 bestanden, 0 fehlgeschlagen |
+| Nachkontrolle | Konfiguration zurückgesetzt (`RULE_POLL_SILENCE_SEC` 2700, `POLL_JOB_NAME`, `LILAM_GROUP`), keine Jobs, keine Testgruppen in `LILAM_RULES`/`LILAM_ALERT_STATE`; Alerts der Watchdog-Testgruppe genau `SPM-POLL-SILENT`, `TSTOK-SILENT`, `TSTE-SILENT`, `SPM-POLLJOB-BAD` (je 1), kein `TSTB-SILENT` |
+| `install/50_demo_data.sql` | Demo-Rule-Set Version 2 mit Schweige-Regeln für SAP (Xetra-Zeiten) und AAPL (NASDAQ-Zeiten, `America/New_York`) |
+
+Neue Fälle: Eingabeprüfung der Schweige-Regel (Schweigezeit, Zeitfenster ohne Schweigezeit oder Zeitzone, ungültige Tage über `CHECK_RULE_SET`, kein JSON), Regeln im erzeugten Rule Set, kein Alarm beim Einschalten, Alarm nach Ablauf (Prozess ohne `PROCESS_ID` mit `PROCESS_NAME`, Reihe mit Context), offenes und geschlossenes Zeitfenster, Signale beenden das Schweigen, Zustand des Abruf-Jobs (fehlt, ausgeschaltet, in Ordnung nach Lauf), Watchdog-Lauf mit `SPM-POLLJOB-BAD`, Watchdog als Scheduler-Job.
+
+Nicht getestet: eingeschaltete Jobs über mehrere Intervalle (Dauerbetrieb nur auf Anforderung), Ausfall beider Jobs (dokumentierte Grenze), `SPM-RUN-HANG` mit echtem hängendem Lauf.

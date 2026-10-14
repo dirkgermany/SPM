@@ -7,7 +7,9 @@
 @@../source/spm_prov_mock.pks
 @@../source/spm_watchlist.pks
 @@../source/spm_poll.pks
+@@../source/spm_watchdog.pks
 @@../source/spm_rules.pks
+@@../source/spm_job.pks
 
 @@../source/spm_cfg.pkb
 @@../source/spm_prov.pkb
@@ -15,6 +17,8 @@
 @@../source/spm_watchlist.pkb
 @@../source/spm_poll.pkb
 @@../source/spm_rules.pkb
+@@../source/spm_job.pkb
+@@../source/spm_watchdog.pkb
 
 -- Abbruch, wenn ein SPM-Paket ungültig ist
 declare
@@ -25,6 +29,7 @@ begin
     from   user_objects
     where  object_name like 'SPM\_%' escape '\'
     and    object_type in ('PACKAGE', 'PACKAGE BODY')
+    and    object_name <> 'SPM_TEST'   -- kompiliert test/run_tests.sql
     and    status <> 'VALID';
 
     if l_invalid is not null then

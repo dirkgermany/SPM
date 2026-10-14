@@ -90,3 +90,42 @@ Details: [rules/README.md](../rules/README.md).
 ## LILAM aktualisieren
 
 SPM installiert LILAM in das eigene Schema. Nach einer Änderung im LILAM-Checkout `install/install.sql` erneut ausführen, damit der Body im Schema SPM neu kompiliert wird. Skripte mit `WHENEVER`/`EXIT` über die SQLcl-Kommandozeile ausführen, nicht über einen SQLcl-MCP-Server: `EXIT` beendet dessen Skript-Engine.
+
+## Abruf-Job (DBMS_SCHEDULER)
+
+Die Installation legt den Job **nicht** an: Ein eingeschalteter Job ruft dauerhaft Kurse ab.
+
+```sql
+exec spm_job.create_job                 -- Name und Intervall aus SPM_CONFIG (SPM_POLL_JOB, 15 min), ausgeschaltet
+exec spm_job.enable_job                 -- einschalten: erster Lauf sofort, dann im Intervall
+exec spm_job.create_job(p_interval_minutes => 5)   -- Intervall ändern (Job wird dabei ausgeschaltet)
+exec spm_job.run_now                    -- einmal sofort in eigener Session
+exec spm_job.disable_job                -- ausschalten; ein laufender Abruf endet regulär
+exec spm_job.drop_job
+```
+
+Jeder Job-Lauf ist ein eigener LILAM-Prozess (In-Session, kein LILAM-Server nötig). Ein Lauf mit systemischem Fehler endet mit ORA-20110, der Scheduler verbucht ihn als `FAILED`. Überlappende Läufe (Job und manueller Abruf) verhindert die Sperre in `spm_poll`; der zweite Lauf wird als `SKIPPED` protokolliert.
+
+Zustand und Aktualität in einer Zeile:
+
+```sql
+select job_exists, enabled, state, next_run_date, last_job_status, last_job_error,
+       last_success_at, last_run_status
+from   spm_job_status_v;
+```
+
+Das Abrufintervall muss zu den Limits des Providers passen (Anzahl Symbole × Läufe je Tag).
+
+## Watchdog-Job
+
+Erst einschalten, wenn der Abruf-Job läuft (sonst meldet der Watchdog den ausgeschalteten Abruf-Job als Fehler):
+
+```sql
+exec spm_job.create_watchdog_job                       -- WATCHDOG_JOB_NAME, alle 5 min, ausgeschaltet
+exec spm_job.enable_job(spm_job.watchdog_job_name)
+exec spm_job.disable_job(spm_job.watchdog_job_name)
+```
+
+Die Schweige-Regeln (`SPM-POLL-SILENT` usw.) stehen im Rule Set; nach Änderungen an `RULE_*_SEC` in `SPM_CONFIG` `exec spm_rules.publish`. Zustand beider Jobs: `SPM_JOB_STATUS_V` (Spalten `WD_*` für den Watchdog). Details: [rules/README.md](../rules/README.md#watchdog).
+
+SPM benötigt LILAM mit `CHECK_SILENCE` (Branch `messwerte` ab `0026955`); `install/install.sql` prüft das.

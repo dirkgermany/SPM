@@ -25,8 +25,9 @@ whenever sqlerror exit failure rollback
 set feedback on
 
 prompt
-prompt === SPM 2/4: Tabellen ===
+prompt === SPM 2/4: Tabellen und Sichten ===
 @@20_tables.sql
+@@25_views.sql
 
 prompt
 prompt === SPM 3/4: Pakete ===
@@ -38,3 +39,4 @@ prompt === SPM 4/4: Grunddaten ===
 
 prompt
 prompt SPM ist installiert. Demo-Watchlist (optional): @install/50_demo_data.sql
+prompt Abruf-Job (nicht automatisch): exec spm_job.create_job; exec spm_job.enable_job

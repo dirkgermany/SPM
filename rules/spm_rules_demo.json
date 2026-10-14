@@ -93,6 +93,74 @@
       }
     },
     {
+      "id" : "SPM-POLL-SILENT",
+      "_comment" : "Kein Abruflauf gestartet (s)",
+      "trigger_type" : "PROCESS_START",
+      "action" : "SPM_POLL",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_SILENCE_SECONDS",
+        "value" : "2700"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-RUN-HANG",
+      "_comment" : "Laufender Abruflauf sendet nichts (s)",
+      "trigger_type" : "PROCESS_UPDATE",
+      "action" : "SPM_POLL",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_SILENCE_SECONDS",
+        "value" : "600"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-WATCHDOG-SILENT",
+      "_comment" : "Kein Watchdog-Lauf gestartet (s)",
+      "trigger_type" : "PROCESS_START",
+      "action" : "SPM_WATCHDOG",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_SILENCE_SECONDS",
+        "value" : "1800"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SPM-POLLJOB-BAD",
+      "_comment" : "Abruf-Job fehlt, ist ausgeschaltet oder zuletzt fehlgeschlagen",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "POLL_JOB_HEALTH",
+      "condition" :
+      {
+        "operator" : "VAL_MIN",
+        "value" : "1"
+      },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "ERROR",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
       "id" : "AAPL-UP",
       "_comment" : "Kurs mehr als 2.5 % über dem EWMA",
       "trigger_type" : "MARK_EVENT",
@@ -121,6 +189,33 @@
         "operator" : "VAL_EWMA_DEVIATION_PCT_DOWN",
         "value" : "2.5"
       },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "AAPL-SILENT",
+      "_comment" : "Kein neuer Kurs seit 3600 s",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "AAPL",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_SILENCE_SECONDS",
+        "value" : "3600"
+      },
+      "windows" :
+      [
+        {
+          "days" : "MON-FRI",
+          "from" : "09:30",
+          "to" : "16:00"
+        }
+      ],
+      "time_zone" : "America/New_York",
       "alert" :
       {
         "handler" : "SPM_ALERT",
@@ -193,6 +288,33 @@
         "operator" : "VAL_EWMA_DEVIATION_PCT_DOWN",
         "value" : "3|5|0.2"
       },
+      "alert" :
+      {
+        "handler" : "SPM_ALERT",
+        "severity" : "WARN",
+        "throttle_seconds" : 3600
+      }
+    },
+    {
+      "id" : "SAP-SILENT",
+      "_comment" : "Kein neuer Kurs seit 3600 s",
+      "trigger_type" : "MARK_EVENT",
+      "action" : "SHARE_PRICE",
+      "context" : "SAP",
+      "condition" :
+      {
+        "operator" : "TIME_MAX_SILENCE_SECONDS",
+        "value" : "3600"
+      },
+      "windows" :
+      [
+        {
+          "days" : "MON-FRI",
+          "from" : "09:00",
+          "to" : "17:30"
+        }
+      ],
+      "time_zone" : "Europe/Berlin",
       "alert" :
       {
         "handler" : "SPM_ALERT",

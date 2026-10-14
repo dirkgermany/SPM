@@ -1895,7 +1895,7 @@ wwv_flow_imp_page.create_page_button(
 ,p_button_template_id=>4072362960822175091
 ,p_button_image_alt=>unistr('Historie l\00F6schen')
 ,p_button_position=>'NEXT'
-,p_confirm_message=>unistr('Alle gespeicherten Kurse dieser Aktie l\00F6schen und das gleitende Mittel in LILAM zur\00FCcksetzen? Alerts bleiben erhalten. Das l\00E4sst sich nicht r\00FCckg\00E4ngig machen.')
+,p_confirm_message=>unistr('Alle gespeicherten Kurse dieser Aktie l\00F6schen und das gleitende Mittel zur\00FCcksetzen? Alerts bleiben erhalten. Das l\00E4sst sich nicht r\00FCckg\00E4ngig machen.')
 ,p_confirm_style=>'warning'
 ,p_icon_css_classes=>'fa-trash-o'
 ,p_security_scheme=>wwv_flow_imp.id(12755904030517599)

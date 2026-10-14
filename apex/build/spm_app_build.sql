@@ -1148,7 +1148,7 @@ begin
         p_url => lnk || '2:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
     -- nur Administration; der Prozess prüft das Recht zusätzlich
     btn := spm_apex_builder.button('DELETE_HISTORY', 'Historie löschen', r, 40,
-        p_confirm => 'Alle gespeicherten Kurse dieser Aktie löschen und das gleitende Mittel in LILAM zurücksetzen?'
+        p_confirm => 'Alle gespeicherten Kurse dieser Aktie löschen und das gleitende Mittel zurücksetzen?'
                   || ' Alerts bleiben erhalten. Das lässt sich nicht rückgängig machen.',
         p_icon => 'fa-trash-o', p_security_scheme => wwv_flow_imp.id(12755904030517599));
     spm_apex_builder.item('P4_MSG', r, 6, p_type => 'HIDDEN');

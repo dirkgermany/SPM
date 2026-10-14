@@ -50,5 +50,9 @@ create or replace package spm_apex_builder as
     procedure nav(p_list_id number, p_seq number, p_label varchar2, p_page number, p_icon varchar2,
                   p_current_pages varchar2 default null);
 
+    -- Eintrag in der Navigationsleiste (oben rechts); p_css_class an der Listenzeile
+    procedure navbar(p_list_id number, p_seq number, p_label varchar2, p_page number, p_icon varchar2,
+                     p_css_class varchar2 default null);
+
 end spm_apex_builder;
 /

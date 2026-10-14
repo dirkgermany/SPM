@@ -8,6 +8,12 @@ create or replace package body spm_apex_builder as
     C_TPL_LABEL    constant number := 1609121967514267634;  -- Optional
     C_TPL_LABEL_R  constant number := 1609122147107268652;  -- Required
 
+    -- Seiten-CSS: "Startseite" in der Navigationsleiste als heller Button
+    C_PAGE_CSS constant varchar2(1000) :=
+           '.spm-home .t-Button--navBar { background: #ffffff; border-radius: 4px; margin: 0 8px; padding: 4px 12px; }' || chr(10)
+        || '.spm-home .t-Button--navBar .t-Icon, .spm-home .t-Button--navBar .t-Button-label { color: #0b5cad; font-weight: bold; }' || chr(10)
+        || '.spm-home .t-Button--navBar:hover { background: #e8f1fb; }';
+
     g_next       number;
     g_page       number;
     g_ws_cols    varchar2(4000);
@@ -42,6 +48,7 @@ create or replace package body spm_apex_builder as
             p_step_title            => nvl(p_title, p_name),
             p_autocomplete_on_off   => 'OFF',
             p_page_template_options => '#DEFAULT#',
+            p_inline_css            => C_PAGE_CSS,
             p_protection_level      => p_protection,
             p_page_is_public_y_n    => case when p_public then 'Y' else 'N' end,
             p_required_role         => p_required_role,
@@ -321,6 +328,20 @@ create or replace package body spm_apex_builder as
             p_list_item_current_type      => 'COLON_DELIMITED_PAGE_LIST',
             p_list_item_current_for_pages => nvl(p_current_pages, to_char(p_page)));
     end nav;
+
+    procedure navbar(p_list_id number, p_seq number, p_label varchar2, p_page number, p_icon varchar2,
+                     p_css_class varchar2 default null) is
+    begin
+        wwv_flow_imp_shared.create_list_item(
+            p_id                          => next_id,
+            p_list_id                     => p_list_id,
+            p_list_item_display_sequence  => p_seq,
+            p_list_item_link_text         => p_label,
+            p_list_item_link_target       => 'f?p=&APP_ID.:' || p_page || ':&APP_SESSION.::&DEBUG.:::',
+            p_list_item_icon              => p_icon,
+            p_list_text_02                => p_css_class,
+            p_list_item_current_type      => 'TARGET_PAGE');
+    end navbar;
 
 end spm_apex_builder;
 /

@@ -1035,6 +1035,9 @@ begin
     spm_apex_builder.nav(wwv_flow_imp.id(12751279693517464), 50, 'Technisches Monitoring', 9, 'fa-heartbeat');
     spm_apex_builder.nav(wwv_flow_imp.id(12751279693517464), 60, 'Administration',        10, 'fa-cogs');
 
+    -- Navigationsleiste oben rechts: Startseite vor dem Benutzermenü
+    spm_apex_builder.navbar(wwv_flow_imp.id(12752330931517537), 5, 'Startseite', 1, 'fa-home', 'spm-home');
+
     --------------------------------------------------------------------------
     -- 1 Dashboard
     --------------------------------------------------------------------------

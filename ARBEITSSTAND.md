@@ -32,7 +32,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
   `export JAVA_HOME='C:\Program Files\Oracle\sqldeveloper\jdk\jre'; echo exit | /c/sqlcl/bin/sql.exe -S -name spm @install/install.sql C:/Users/dirk/Documents/LILAM/lilam`
 - **Vor Installation und Tests den Zustell-Job anhalten** (er belegt `spm_notify` bis zu 60 min; die Tests brechen ab, wenn SPM-Jobs eingeschaltet sind):
   `dbms_scheduler.disable('SPM_NOTIFY_JOB', force => true); dbms_scheduler.stop_job('SPM_NOTIFY_JOB');` – danach `spm_job.enable_job(spm_job.notify_job_name)`.
-- Installation: `@install/install.sql <LILAM-Checkout>` (wiederholbar). Tests: `@test/run_tests.sql` (zuletzt **317 bestanden**). Live-Test Twelve Data (kostet Credits): `@test/live_twelvedata.sql "AAPL,SAP"`.
+- Installation: `@install/install.sql <LILAM-Checkout>` (wiederholbar). Tests: `@test/run_tests.sql` (zuletzt **321 bestanden**). Live-Test Twelve Data (kostet Credits): `@test/live_twelvedata.sql "AAPL,SAP"`.
 - APEX-Anwendung ändern: `apex/build/spm_app_build.sql` (im Ordner `apex/build` ausführen), danach Export `apex export -applicationid 100 -skipExportDate -expOriginalIds -overwrite-files` im Ordner `apex` → `apex/f100.sql`. **Nach jedem Neuaufbau muss Dirk sich neu anmelden** – einfach ansagen, keine Umgehung (`set_keep_sessions` führte zu ORA-28817).
 - Browser-Fenster der App: Dirk vorher sagen, wenn ich darin klicke; er soll dann nicht parallel klicken. Strg+Umschalt+B schaltet das Fenster ein/aus.
 - Echte Mails nur nach Absprache; Spam-Schutz ist aktiv (12/h, 10 s Abstand).

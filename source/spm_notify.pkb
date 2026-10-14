@@ -191,7 +191,7 @@ create or replace package body spm_notify as
     procedure line(p_body in out nocopy clob, p_label varchar2, p_value varchar2) is
     begin
         if p_value is not null then
-            p_body := p_body || rpad(p_label || ':', 12) || p_value || utl_tcp.crlf;
+            p_body := p_body || rpad(p_label || ':', 13) || p_value || utl_tcp.crlf;
         end if;
     end line;
 
@@ -201,18 +201,19 @@ create or replace package body spm_notify as
         l_body := alert_kind(m) || ': ' || nvl(m.rule_comment, m.a.rule_id) || utl_tcp.crlf
                || 'Dringlichkeit: ' || initcap(m.a.alert_severity) || ' - Regel ' || m.a.rule_id || utl_tcp.crlf || utl_tcp.crlf;
         line(l_body, 'Zeit',     to_char(m.a.created_at, 'DD.MM.YYYY HH24:MI:SS'));
-        line(l_body, 'Regel',    m.rule_comment || case when m.rule_operator is not null
-                                                   then ' [' || m.rule_operator || ' ' || m.rule_value || ']' end);
         line(l_body, 'Symbol',   m.symbol || case when m.inst_name is not null then ' - ' || m.inst_name end);
         line(l_body, 'Kurs',     case when m.price is not null
-                                      then fmt(m.price) || ' ' || m.currency
-                                        || case when m.ewma is not null then ' (EWMA ' || fmt(m.ewma) || ')' end end);
+                                      then fmt2(m.price) || ' ' || m.currency
+                                        || case when m.ewma is not null then ' (EWMA ' || fmt2(m.ewma) || ')' end end);
         line(l_body, 'Dauer',    case when m.price is null and m.millis is not null then fmt(m.millis) || ' ms' end);
         line(l_body, 'Aktion',   case when m.symbol is null then m.a.action_name
                                       || case when m.a.context_name is not null then ' / ' || m.a.context_name end end);
-        line(l_body, 'Prozess',  process_text(m));
-        line(l_body, 'Info',     substr(m.proc_info, 1, 400));
-        line(l_body, 'Gruppe',   m.a.group_name || ', Rule Set ' || m.a.rule_set_name || ' v' || m.a.rule_set_version);
+        -- Prozess und Info nur bei technischen Alerts
+        line(l_body, 'Prozess',  case when m.symbol is null then process_text(m) end);
+        line(l_body, 'Info',     case when m.symbol is null then substr(m.proc_info, 1, 400) end);
+        line(l_body, 'Auslöser', m.rule_comment || case when m.rule_operator is not null
+                                                   then ' [' || m.rule_operator || ' ' || m.rule_value || ']' end);
+        line(l_body, 'Regel / Set', m.a.rule_id || ' / ' || m.a.rule_set_name || ' v' || m.a.rule_set_version);
         line(l_body, 'Alert-ID', to_char(m.a.alert_id));
         return l_body || utl_tcp.crlf
             || 'Technischer Monitoring-Demonstrator, keine Anlageberatung. Kursdaten können je nach Anbieter verzögert sein.'
@@ -299,16 +300,17 @@ create or replace package body spm_notify as
                || '<div style="padding:4px 20px 20px 20px;">' || utl_tcp.crlf
                || highlight(m)
                || '<table style="width:100%;border-collapse:collapse;font-size:14px;">' || utl_tcp.crlf
-               || row('Regel', rule_text(m))
                || row('Symbol', m.symbol || case when m.inst_name is not null then ' - ' || m.inst_name end)
                || row('Kurs', case when m.price is not null then fmt2(m.price) || ' ' || m.currency end)
                || row('Gleitendes Mittel', case when m.ewma is not null then fmt2(m.ewma) || ' ' || m.currency end)
                || row('Dauer', case when m.price is null and m.millis is not null then fmt(m.millis) || ' ms' end)
                || row('Aktion', case when m.symbol is null then m.a.action_name
                                      || case when m.a.context_name is not null then ' / ' || m.a.context_name end end)
-               || row('Prozess', process_text(m))
-               || row('Info', substr(m.proc_info, 1, 400))
-               || row('Gruppe', m.a.group_name || ', Rule Set ' || m.a.rule_set_name || ' v' || m.a.rule_set_version)
+               -- Prozess und Info nur bei technischen Alerts
+               || row('Prozess', case when m.symbol is null then process_text(m) end)
+               || row('Info', case when m.symbol is null then substr(m.proc_info, 1, 400) end)
+               || row('Auslöser', rule_text(m))
+               || row('Regel / Set', m.a.rule_id || ' / ' || m.a.rule_set_name || ' v' || m.a.rule_set_version)
                || row('Alert-ID', to_char(m.a.alert_id))
                || '</table>' || utl_tcp.crlf
                || '<p style="margin-top:20px;font-size:11px;color:#9ca3af;">Technischer Monitoring-Demonstrator, '

@@ -103,7 +103,7 @@ Der Überblick auf einen Blick. Die farbige Kante jeder Kachel zeigt den Zustand
 - **Letzter Lauf:** Ergebnis und Zahlen des letzten Abruflaufs
 - **Beobachtete Symbole, Alerts (24 h):** Umfang und Lage
 - **Abruf-Job, Watchdog, Zustellung:** an oder aus
-- **Letzte Alerts:** Klick auf die Nummer öffnet die Mail-Vorschau
+- **Letzte Alerts:** Klick auf die Nummer mit dem Briefsymbol öffnet die Mail-Vorschau
 
 ### Watchlist
 
@@ -150,13 +150,13 @@ Alle Regeln einer Aktie. Leere Felder bedeuten: diese Regel gibt es nicht. Das F
 
 ![Alerts](img/07_alerts.jpg)
 
-Alle ausgelösten Alerts der Kursregeln mit Kurs, gleitendem Mittel, Status und Mail-Zustellung. **PENDING** heißt noch nicht zugestellt, **PROCESSED** zugestellt, **ERROR** Zustellung fehlgeschlagen. Die Nummer anklicken öffnet die Mail-Vorschau. Technische Alerts (Regeln `SPM-…`) stehen im Technischen Monitoring.
+Alle ausgelösten Alerts der Kursregeln mit Kurs, gleitendem Mittel, Status und Mail-Zustellung. **PENDING** heißt noch nicht zugestellt, **PROCESSED** zugestellt, **ERROR** Zustellung fehlgeschlagen. Die Nummer mit dem Briefsymbol anklicken öffnet die Mail-Vorschau. Technische Alerts (Regeln `SPM-…`) stehen im Technischen Monitoring.
 
 ### Alert
 
 ![Alert](img/08_alert.jpg)
 
-Die Mail zum Alert, genau so, wie sie verschickt wurde: Art des Alerts im Kopf (Grenzwert, Ausreißer, Schweigen oder Technik), Dringlichkeit als Abzeichen, der Messwert hervorgehoben mit Grenze bzw. Abweichung, darunter die Einzelheiten.
+Die Mail zum Alert, genau so, wie sie verschickt wurde: Art des Alerts im Kopf (Grenzwert, Ausreißer, Schweigen oder Technik), Dringlichkeit als Abzeichen, der Messwert hervorgehoben mit Grenze bzw. Abweichung, darunter die Einzelheiten. Bei Kurs-Alerts sind das Aktie, Kurs, Regel und Regelset; technische Alerts nennen zusätzlich den LILAM-Prozess und dessen Zähler. **Zurück** führt zu der Seite, von der aus die Mail geöffnet wurde.
 
 ### Technisches Monitoring
 

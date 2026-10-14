@@ -1050,7 +1050,7 @@ begin
      || ' where action_name = ''SHARE_PRICE''',
         'home_alerts', p_rows => 10);
     spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
-        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID:\#ALERT_ID#\', p_link_text => '#ALERT_ID#');
+        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID,P8_FROM:\#ALERT_ID#\,1', p_link_text => '<span class="fa fa-envelope-o" aria-hidden="true"></span> #ALERT_ID#');
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol');
@@ -1282,7 +1282,7 @@ begin
      || ' where action_name = ''SHARE_PRICE''',
         'alerts');
     spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
-        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID:\#ALERT_ID#\', p_link_text => '#ALERT_ID#');
+        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID,P8_FROM:\#ALERT_ID#\,7', p_link_text => '<span class="fa fa-envelope-o" aria-hidden="true"></span> #ALERT_ID#');
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Symbol');
@@ -1306,8 +1306,10 @@ begin
     spm_apex_builder.page(8, 'Alert', 'ALERT', 'Alert &P8_ALERT_ID.');
     r := spm_apex_builder.region_html('Mail', 10, 'return spm_apex.alert_mail_html(:P8_ALERT_ID);', 'P8_ALERT_ID');
     spm_apex_builder.item('P8_ALERT_ID', r, 5, p_type => 'HIDDEN');
-    btn := spm_apex_builder.button('BACK', 'Alerts', r, 10, p_action => 'REDIRECT_URL',
-        p_url => lnk || '7:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
+    -- Herkunftsseite (1, 7 oder 9) für "Zurück"
+    spm_apex_builder.item('P8_FROM', r, 6, p_type => 'HIDDEN');
+    btn := spm_apex_builder.button('BACK', 'Zurück', r, 10, p_action => 'REDIRECT_URL',
+        p_url => lnk || '&P8_FROM.:&SESSION.::&DEBUG.:::', p_position => 'PREVIOUS');
 
     --------------------------------------------------------------------------
     -- 9 Technisches Monitoring
@@ -1337,7 +1339,7 @@ begin
      || ' from spm_alert_v where action_name is null or action_name <> ''SHARE_PRICE''',
         'tech_alerts', p_rows => 10);
     spm_apex_builder.ir_col('ALERT_ID', 'Alert', 'NUMBER',
-        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID:\#ALERT_ID#\', p_link_text => '#ALERT_ID#');
+        p_link => lnk || '8:&SESSION.::&DEBUG.:8:P8_ALERT_ID,P8_FROM:\#ALERT_ID#\,9', p_link_text => '<span class="fa fa-envelope-o" aria-hidden="true"></span> #ALERT_ID#');
     spm_apex_builder.ir_col('CREATED_AT', 'Zeit', 'DATE', p_format => 'DD.MM.YYYY HH24:MI:SS');
     spm_apex_builder.ir_col('RULE_ID', 'Regel');
     spm_apex_builder.ir_col('SYMBOL', 'Context');

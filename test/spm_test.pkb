@@ -805,9 +805,13 @@ create or replace package body spm_test as
         ok(instr(l_subject, '[SPM] Grenzwert TSTR: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_html, 'Grenzwert: ') > 0, 'HTML: Art des Alerts im Kopf');
         ok(instr(l_body, 'TSTR - Test TSTR') > 0, 'Symbol und Instrument');
-        ok(instr(l_body, '150 EUR') > 0, 'Kurs mit Währung');
+        ok(instr(l_body, '150,00 EUR') > 0, 'Kurs mit Währung, zwei Nachkommastellen');
         ok(instr(l_body, '[VAL_MAX 100]') > 0, 'Regel mit Schwelle');
-        ok(instr(l_body, 'SPMTEST_POLL (') > 0, 'Prozess');
+        ok(instr(l_body, 'SPMTEST_POLL (') = 0, 'Kurs-Alert ohne Prozess');
+        ok(instr(l_html, '>Info<') = 0, 'HTML: Kurs-Alert ohne Info');
+        ok(regexp_like(l_body, 'Regel / Set: +TSTR-MAX / ') and instr(l_body, 'Gruppe') = 0, 'Regel / Set statt Gruppe');
+        ok(instr(l_html, '>Regel / Set<') > instr(l_html, '>Auslöser<') and instr(l_html, '>Auslöser<') > instr(l_html, '>Kurs<'),
+           'HTML: Auslöser und Regel / Set nach dem Kurs');
         ok(instr(l_html, 'background:#e74c3c') > 0, 'HTML: Kopf in ERROR-Rot');
         ok(instr(l_html, '150,00 EUR') > 0, 'HTML: Kurs');
         ok(instr(l_html, '&#9650; über der Obergrenze 100,00 EUR (50,00 %)') > 0, 'HTML: Überschreitung in Prozent');
@@ -817,6 +821,7 @@ create or replace package body spm_test as
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTE-UP';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
         ok(instr(l_html, 'über dem gleitenden Mittel') > 0, 'HTML: Abweichung vom EWMA');
+        ok(regexp_like(l_body, '\(EWMA [0-9.]+,[0-9]{2}\)'), 'Text: EWMA mit zwei Nachkommastellen');
         ok(instr(l_subject, '[SPM] Ausreißer TSTE: ') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_html, 'color:#e74c3c;font-weight:bold;">&#9650;') > 0, 'HTML: starke Abweichung rot, Pfeil nach oben');
         ok(instr(l_html, 'mehr als 5 % über dem gleitenden Mittel (EWMA)') > 0, 'HTML: Regel in Worten');
@@ -824,7 +829,7 @@ create or replace package body spm_test as
         start_case('Zustellung: Mailtext eines Schweige-Alerts ohne Prozess');
         select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
         spm_notify.build_message(l_alert, l_subject, l_body, l_html);
-        ok(instr(l_body, 'kein Prozess (SPMTEST_POLL nicht gestartet)') > 0, 'kein Prozess');
+        ok(instr(l_body, 'kein Prozess (SPMTEST_POLL nicht gestartet)') > 0, 'technischer Alert mit Prozesszeile');
         ok(instr(l_subject, '[SPM] Technik SPMTEST_POLL: Kein Abruflauf seit 3 s') > 0, 'Betreff: ' || l_subject);
         ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
         ok(instr(l_html, 'border-left:6px solid #8e44ad') > 0, 'HTML: Schweigen violett');

@@ -941,7 +941,19 @@ create or replace package body spm_test as
 
     ------------------------------------------------------------------------
     procedure run_all is
+        l_jobs varchar2(4000);
     begin
+        -- Tests ändern SPM_CONFIG vorübergehend (Gruppe, Mail-Empfänger); laufende Jobs würden das lesen
+        select listagg(job_name, ', ') within group (order by job_name)
+        into   l_jobs
+        from   user_scheduler_jobs
+        where  job_name in (spm_job.job_name, spm_job.watchdog_job_name, spm_job.notify_job_name)
+        and    (enabled = 'TRUE' or state = 'RUNNING');
+        if l_jobs is not null then
+            raise_application_error(-20903, 'Vor den Tests ausschalten und anhalten: ' || l_jobs
+                || ' (spm_job.disable_job, spm_job.stop_job)');
+        end if;
+
         g_pass := 0;
         g_fail := 0;
         setup;

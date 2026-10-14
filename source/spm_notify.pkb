@@ -121,10 +121,38 @@ create or replace package body spm_notify as
     ------------------------------------------------------------------------
     -- Versand über UTL_SMTP (Text, UTF-8)
     ------------------------------------------------------------------------
+    -- Text als UTF-8-Bytes, unabhängig vom Zeichensatz der Datenbank
+    function utf8(p_text varchar2) return raw is
+    begin
+        return utl_raw.convert(utl_raw.cast_to_raw(p_text), 'AMERICAN_AMERICA.AL32UTF8',
+                               'AMERICAN_AMERICA.' || nls_charset_name(nls_charset_id('CHAR_CS')));
+    end utf8;
+
     procedure write_text(p_conn in out nocopy utl_smtp.connection, p_text varchar2) is
     begin
-        utl_smtp.write_raw_data(p_conn, utl_raw.cast_to_raw(p_text));
+        utl_smtp.write_raw_data(p_conn, utf8(p_text));
     end write_text;
+
+    -- Betreff als MIME-Encoded-Words (RFC 2047, UTF-8, Base64). UTL_ENCODE.MIMEHEADER_ENCODE
+    -- kennt den Namen UTF-8 nicht (ORA-30205). Teilstücke zu 20 Zeichen halten jedes Wort
+    -- unter 75 Zeichen; Folgezeilen beginnen mit einem Leerzeichen.
+    function encode_subject(p_subject varchar2) return varchar2 is
+        l_result varchar2(4000);
+        l_pos    pls_integer := 1;
+        l_part   varchar2(100);
+    begin
+        while l_pos <= nvl(length(p_subject), 0) loop
+            l_part := substr(p_subject, l_pos, 20);
+            l_result := l_result
+                     || case when l_pos > 1 then utl_tcp.crlf || ' ' end
+                     || '=?UTF-8?B?'
+                     || replace(replace(utl_raw.cast_to_varchar2(utl_encode.base64_encode(utf8(l_part))),
+                            chr(13)), chr(10))
+                     || '?=';
+            l_pos := l_pos + 20;
+        end loop;
+        return l_result;
+    end encode_subject;
 
     procedure send_smtp(p_from varchar2, p_to varchar2, p_subject varchar2, p_body clob) is
         l_conn   utl_smtp.connection;
@@ -145,7 +173,7 @@ create or replace package body spm_notify as
         utl_smtp.open_data(l_conn);
         write_text(l_conn, 'From: ' || p_from || utl_tcp.crlf);
         write_text(l_conn, 'To: ' || p_to || utl_tcp.crlf);
-        write_text(l_conn, 'Subject: ' || utl_encode.mimeheader_encode(p_subject, 'UTF-8', utl_encode.base64) || utl_tcp.crlf);
+        write_text(l_conn, 'Subject: ' || encode_subject(p_subject) || utl_tcp.crlf);
         write_text(l_conn, 'Date: ' || to_char(systimestamp, 'Dy, DD Mon YYYY HH24:MI:SS TZHTZM', 'NLS_DATE_LANGUAGE=ENGLISH') || utl_tcp.crlf);
         write_text(l_conn, 'MIME-Version: 1.0' || utl_tcp.crlf);
         write_text(l_conn, 'Content-Type: text/plain; charset=UTF-8' || utl_tcp.crlf);

@@ -83,3 +83,17 @@ Nicht getestet: eingeschaltete Jobs über mehrere Intervalle (Dauerbetrieb nur a
 Neue Fälle: Mailtext eines Grenzwert-Alerts (Symbol, Instrument, Kurs mit Währung, Regel mit Schwelle, Prozess) und eines Schweige-Alerts ohne Prozess; ohne Absender/Empfänger bleiben Alerts offen; Transport MOCK verarbeitet alle offenen Alerts genau der konfigurierten Gruppe und protokolliert sie; SMTP-Fehler (keine ACL bzw. kein Dienst) wird als `ERROR` mit Meldung verbucht; Consumer-Lauf als LILAM-Prozess mit `NOTIFY_RESULT`; Zustell-Job anlegen.
 
 Nicht getestet: echter Versand per SMTP (erst nach ACL, Absender/Empfänger und Freigabe durch Dirk), Zustell-Job im Dauerbetrieb.
+
+## 2026-10-14: Echter Testversand
+
+Freigabe durch Dirk; ACL (`install/01_admin_network_acl.sql`), `MAIL_FROM`/`MAIL_TO` und Zustell-Job von Dirk eingerichtet.
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Test-Instrument `MAILTEST` (Mock, Kurs 150, Obergrenze 100), Rule Set v3, manueller Abruf | Alert 120 `MAILTEST-MAX` in `STOCK_MONITORING`, vom laufenden Zustell-Job sofort aufgenommen; Mailtext vollständig |
+| Versand 1 | `ERROR` ORA-30205: `UTL_ENCODE.MIMEHEADER_ENCODE` kennt den Zeichensatznamen `UTF-8` nicht. Es ging keine Mail hinaus. Behoben: Betreff als RFC-2047-Encoded-Words selbst kodiert, Text und Betreff unabhängig vom DB-Zeichensatz nach UTF-8 |
+| Aktualisierung | Zustell-Job belegt `spm_notify` bis zu 60 min; neu: `spm_job.stop_job`. Job ausgeschaltet/angehalten, neu installiert, Tests 284 bestanden, Job wieder eingeschaltet |
+| Versand 2 (Alert 120 erneut `PENDING`) | `SENT` um 10:25:34, Alert `PROCESSED`; Empfang durch Dirk zu bestätigen |
+| Aufräumen | `MAILTEST` deaktiviert, Regel entfernt, Rule Set v4 ohne `MAILTEST` |
+
+Neu in den Tests: Sie brechen ab, wenn SPM-Jobs eingeschaltet sind oder laufen (ein laufender Zustell-Job würde die vorübergehend geänderte Konfiguration der Tests lesen und könnte echte Mails an Testadressen schicken).

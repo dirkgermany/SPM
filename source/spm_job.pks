@@ -41,6 +41,10 @@ create or replace package spm_job as
     -- Ein laufender Lauf wird nicht abgebrochen, nur keine weiteren gestartet.
     procedure disable_job(p_job_name varchar2 default null);
 
+    -- Laufenden Lauf beenden (z. B. vor dem Neukompilieren von Paketen, die ein langer
+    -- Zustell-Lauf belegt). Der Zeitplan bleibt; eingeschaltete Jobs laufen planmäßig weiter.
+    procedure stop_job(p_job_name varchar2 default null);
+
     -- Einmal sofort in eigener Session starten (asynchron), unabhängig vom Zeitplan.
     procedure run_now(p_job_name varchar2 default null);
 

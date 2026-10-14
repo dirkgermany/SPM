@@ -2289,8 +2289,49 @@ wwv_flow_imp_page.create_page_item(
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(91000000000091)
-,p_name=>'P6_VAL_MIN'
+,p_name=>'P6_SEVERITY_LIMIT'
 ,p_item_sequence=>30
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>'Dringlichkeit Grenzwert'
+,p_display_as=>'NATIVE_SELECT_LIST'
+,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'page_action_on_selection', 'NONE')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000092)
+,p_name=>'P6_SEVERITY_EWMA'
+,p_item_sequence=>40
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>unistr('Dringlichkeit Ausrei\00DFer')
+,p_display_as=>'NATIVE_SELECT_LIST'
+,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
+,p_begin_on_new_line=>'N'
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'page_action_on_selection', 'NONE')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000093)
+,p_name=>'P6_SEVERITY_SILENCE'
+,p_item_sequence=>50
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>'Dringlichkeit Schweigen'
+,p_display_as=>'NATIVE_SELECT_LIST'
+,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
+,p_begin_on_new_line=>'N'
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'page_action_on_selection', 'NONE')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000094)
+,p_name=>'P6_VAL_MIN'
+,p_item_sequence=>60
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
 ,p_prompt=>'Untergrenze'
 ,p_display_as=>'NATIVE_NUMBER_FIELD'
@@ -2303,9 +2344,9 @@ wwv_flow_imp_page.create_page_item(
   'virtual_keyboard', 'decimal')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000092)
+ p_id=>wwv_flow_imp.id(91000000000095)
 ,p_name=>'P6_VAL_MAX'
-,p_item_sequence=>40
+,p_item_sequence=>70
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
 ,p_prompt=>'Obergrenze'
 ,p_display_as=>'NATIVE_NUMBER_FIELD'
@@ -2319,9 +2360,9 @@ wwv_flow_imp_page.create_page_item(
   'virtual_keyboard', 'decimal')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000093)
+ p_id=>wwv_flow_imp.id(91000000000096)
 ,p_name=>'P6_EWMA_PCT_UP'
-,p_item_sequence=>50
+,p_item_sequence=>80
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
 ,p_prompt=>unistr('Ausrei\00DFer nach oben (%)')
 ,p_display_as=>'NATIVE_NUMBER_FIELD'
@@ -2335,9 +2376,9 @@ wwv_flow_imp_page.create_page_item(
   'virtual_keyboard', 'decimal')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000094)
+ p_id=>wwv_flow_imp.id(91000000000097)
 ,p_name=>'P6_EWMA_PCT_DOWN'
-,p_item_sequence=>60
+,p_item_sequence=>90
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
 ,p_prompt=>unistr('Ausrei\00DFer nach unten (%)')
 ,p_display_as=>'NATIVE_NUMBER_FIELD'
@@ -2351,113 +2392,9 @@ wwv_flow_imp_page.create_page_item(
   'virtual_keyboard', 'decimal')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000095)
-,p_name=>'P6_SEVERITY_LIMIT'
-,p_item_sequence=>70
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Dringlichkeit Grenzwert'
-,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'page_action_on_selection', 'NONE')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000096)
-,p_name=>'P6_SEVERITY_EWMA'
-,p_item_sequence=>80
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>unistr('Dringlichkeit Ausrei\00DFer')
-,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
-,p_begin_on_new_line=>'N'
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'page_action_on_selection', 'NONE')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000097)
-,p_name=>'P6_SEVERITY_SILENCE'
-,p_item_sequence=>90
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Dringlichkeit Schweigen'
-,p_display_as=>'NATIVE_SELECT_LIST'
-,p_lov=>'STATIC2:Hinweis;HINWEIS,Warnung;WARNUNG,Alarm;ALARM,Kritisch;KRITISCH'
-,p_begin_on_new_line=>'N'
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'page_action_on_selection', 'NONE')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(91000000000098)
-,p_name=>'P6_EWMA_WARMUP'
-,p_item_sequence=>100
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Warm-up (Anzahl Kurse)'
-,p_display_as=>'NATIVE_NUMBER_FIELD'
-,p_cSize=>30
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>unistr('So viele Kurse bildet LILAM zun\00E4chst den einfachen Mittelwert und meldet keine Ausrei\00DFer. Leer = 3.')
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'number_alignment', 'left',
-  'virtual_keyboard', 'decimal')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000099)
-,p_name=>'P6_EWMA_ALPHA'
-,p_item_sequence=>110
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Alpha (0 bis 1)'
-,p_display_as=>'NATIVE_NUMBER_FIELD'
-,p_cSize=>30
-,p_begin_on_new_line=>'N'
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>unistr('Gewicht des neuesten Kurses im gleitenden Mittel. Klein (0,1) = ruhiges Mittel, gro\00DF (0,5) = folgt schnell. Leer = 0,1.')
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'number_alignment', 'left',
-  'virtual_keyboard', 'decimal')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000100)
-,p_name=>'P6_SILENCE_SECONDS'
-,p_item_sequence=>120
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Schweigen nach (s)'
-,p_display_as=>'NATIVE_NUMBER_FIELD'
-,p_cSize=>30
-,p_begin_on_new_line=>'N'
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>'Alert, wenn so lange kein neuer Kurs gespeichert wurde. Leer = keine Regel.'
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'number_alignment', 'left',
-  'virtual_keyboard', 'decimal')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000101)
-,p_name=>'P6_THROTTLE_SECONDS'
-,p_item_sequence=>130
-,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
-,p_prompt=>'Drosselung (s)'
-,p_display_as=>'NATIVE_NUMBER_FIELD'
-,p_cSize=>30
-,p_begin_on_new_line=>'N'
-,p_field_template=>1609121967514267634
-,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>unistr('Nach einem Alert schweigt dieselbe Regel f\00FCr dieses Symbol so lange (gilt \00FCber Abrufl\00E4ufe hinweg).')
-,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'number_alignment', 'left',
-  'virtual_keyboard', 'decimal')).to_clob
-);
-wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000102)
 ,p_name=>'P6_SILENCE_WINDOWS'
-,p_item_sequence=>140
+,p_item_sequence=>100
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
 ,p_prompt=>'Zeitfenster (JSON)'
 ,p_display_as=>'NATIVE_TEXTAREA'
@@ -2472,9 +2409,9 @@ wwv_flow_imp_page.create_page_item(
   'trim_spaces', 'BOTH')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
- p_id=>wwv_flow_imp.id(91000000000103)
+ p_id=>wwv_flow_imp.id(91000000000099)
 ,p_name=>'P6_SILENCE_TIME_ZONE'
-,p_item_sequence=>150
+,p_item_sequence=>110
 ,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
 ,p_prompt=>'Zeitzone'
 ,p_display_as=>'NATIVE_TEXT_FIELD'
@@ -2489,6 +2426,69 @@ wwv_flow_imp_page.create_page_item(
   'submit_when_enter_pressed', 'N',
   'subtype', 'TEXT',
   'trim_spaces', 'BOTH')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000100)
+,p_name=>'P6_EWMA_WARMUP'
+,p_item_sequence=>120
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>'Warm-up (Anzahl Kurse)'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_help_text=>unistr('So viele Kurse bildet LILAM zun\00E4chst den einfachen Mittelwert und meldet keine Ausrei\00DFer. Leer = 3.')
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000101)
+,p_name=>'P6_EWMA_ALPHA'
+,p_item_sequence=>130
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>'Alpha (0 bis 1)'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_begin_on_new_line=>'N'
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_help_text=>unistr('Gewicht des neuesten Kurses im gleitenden Mittel. Klein (0,1) = ruhiges Mittel, gro\00DF (0,5) = folgt schnell. Leer = 0,1.')
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000102)
+,p_name=>'P6_SILENCE_SECONDS'
+,p_item_sequence=>140
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>'Schweigen nach (s)'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_begin_on_new_line=>'N'
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_help_text=>'Alert, wenn so lange kein neuer Kurs gespeichert wurde. Leer = keine Regel.'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(91000000000103)
+,p_name=>'P6_THROTTLE_SECONDS'
+,p_item_sequence=>150
+,p_item_plug_id=>wwv_flow_imp.id(91000000000088)
+,p_prompt=>'Drosselung (s)'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_begin_on_new_line=>'N'
+,p_field_template=>1609121967514267634
+,p_item_template_options=>'#DEFAULT#'
+,p_help_text=>unistr('Nach einem Alert schweigt dieselbe Regel f\00FCr dieses Symbol so lange (gilt \00FCber Abrufl\00E4ufe hinweg).')
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
 );
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(91000000000108)

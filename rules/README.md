@@ -56,6 +56,7 @@ Drosselung aller technischen Regeln: `RULE_TECH_THROTTLE_SECONDS` (Standard 3600
 | `SPM-RUN-HANG` | `PROCESS_UPDATE` / `SPM_POLL` | `TIME_MAX_SILENCE_SECONDS` | `RULE_RUN_HANG_SEC` (600) | laufender Abruflauf sendet nichts (ERROR) |
 | `SPM-WATCHDOG-SILENT` | `PROCESS_START` / `SPM_WATCHDOG` | `TIME_MAX_SILENCE_SECONDS` | `RULE_WATCHDOG_SILENCE_SEC` (1800) | kein Watchdog-Lauf gestartet (ERROR) |
 | `SPM-POLLJOB-BAD` | `MARK_EVENT` / `POLL_JOB_HEALTH` | `VAL_MIN` | `1` | Abruf-Job fehlt, ist ausgeschaltet, defekt oder zuletzt fehlgeschlagen (ERROR) |
+| `SPM-NOTIFY-SILENT` | `PROCESS_START` / `SPM_NOTIFY` | `TIME_MAX_SILENCE_SECONDS` | `RULE_NOTIFY_SILENCE_SEC` (10800) | kein Zustell-Lauf gestartet (ERROR) |
 
 ## Watchdog
 
@@ -68,7 +69,7 @@ LILAM erkennt das Schweigen, SPM plant die Prüfung ein und überwacht die Prüf
 
 ## Alerts
 
-Alerts schreibt LILAM in `LILAM_ALERTS` (Status `PENDING`) und signalisiert sie über `DBMS_ALERT` auf dem Kanal `SPM_CONFIG.RULE_HANDLER` (Standard `SPM_ALERT`). Einen Consumer, der sie zustellt, gibt es in SPM noch nicht. Messwert und EWMA zum Alert stehen in `LILAM_MON` (`USED_VALUE`, `USED_VALUE_EWMA`), zuzuordnen über `PROCESS_ID`, `ACTION_NAME`, `CONTEXT_NAME` und `ACTION_COUNT`.
+Alerts schreibt LILAM in `LILAM_ALERTS` (Status `PENDING`) und signalisiert sie über `DBMS_ALERT` auf dem Kanal `SPM_CONFIG.RULE_HANDLER` (Standard `SPM_ALERT`). Der Consumer `spm_notify` (eigener Job) stellt die Alerts der SPM-Gruppe per E-Mail zu, protokolliert jeden Versuch in `SPM_NOTIFICATION` und setzt den Status auf `PROCESSED` bzw. `ERROR`. Alerts anderer Gruppen (z. B. der Tests) bleiben unberührt. Messwert und EWMA zum Alert stehen in `LILAM_MON` (`USED_VALUE`, `USED_VALUE_EWMA`), zuzuordnen über `PROCESS_ID`, `ACTION_NAME`, `CONTEXT_NAME` und `ACTION_COUNT`.
 
 ## Nicht vorhandene Operatoren
 

@@ -10,6 +10,11 @@ create or replace package body spm_job as
         return upper(spm_cfg.get_text('WATCHDOG_JOB_NAME', 'SPM_WATCHDOG_JOB'));
     end watchdog_job_name;
 
+    function notify_job_name return varchar2 is
+    begin
+        return upper(spm_cfg.get_text('NOTIFY_JOB_NAME', 'SPM_NOTIFY_JOB'));
+    end notify_job_name;
+
     -- Eigener Job-Name nur als einfacher SQL-Name
     function resolve(p_job_name varchar2, p_default varchar2) return varchar2 is
     begin
@@ -91,6 +96,20 @@ create or replace package body spm_job as
             p_enable   => p_enable,
             p_comment  => 'SPM: Watchdog (spm_watchdog.run), angelegt mit spm_job.create_watchdog_job');
     end create_watchdog_job;
+
+    procedure create_notify_job(
+        p_interval_minutes number   default null,
+        p_enable           boolean  default false,
+        p_job_name         varchar2 default null
+    ) is
+    begin
+        ensure_job(
+            p_name     => resolve(p_job_name, notify_job_name),
+            p_action   => 'begin spm_notify.run_consumer; end;',
+            p_interval => nvl(p_interval_minutes, spm_cfg.get_number('NOTIFY_RUN_MINUTES', 60)),
+            p_enable   => p_enable,
+            p_comment  => 'SPM: Zustellung von Alerts (spm_notify.run_consumer), angelegt mit spm_job.create_notify_job');
+    end create_notify_job;
 
     procedure enable_job(p_job_name varchar2 default null) is
         l_name varchar2(128) := resolve(p_job_name, job_name);

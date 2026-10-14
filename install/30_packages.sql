@@ -8,6 +8,7 @@
 @@../source/spm_watchlist.pks
 @@../source/spm_poll.pks
 @@../source/spm_watchdog.pks
+@@../source/spm_notify.pks
 @@../source/spm_rules.pks
 @@../source/spm_job.pks
 
@@ -19,6 +20,7 @@
 @@../source/spm_rules.pkb
 @@../source/spm_job.pkb
 @@../source/spm_watchdog.pkb
+@@../source/spm_notify.pkb
 
 -- Abbruch, wenn ein SPM-Paket ungültig ist
 declare

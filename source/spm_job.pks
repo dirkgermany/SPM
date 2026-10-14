@@ -27,7 +27,15 @@ create or replace package spm_job as
         p_job_name         varchar2 default null
     );
 
-    -- p_job_name NULL = Abruf-Job; für den Watchdog spm_job.watchdog_job_name übergeben
+    -- Zustell-Job (spm_notify.run_consumer) anlegen; Intervall = Laufzeit eines Laufs
+    -- (NOTIFY_RUN_MINUTES), danach startet der Scheduler den nächsten Lauf.
+    procedure create_notify_job(
+        p_interval_minutes number   default null,
+        p_enable           boolean  default false,
+        p_job_name         varchar2 default null
+    );
+
+    -- p_job_name NULL = Abruf-Job; sonst z. B. spm_job.watchdog_job_name, spm_job.notify_job_name
     procedure enable_job(p_job_name varchar2 default null);
 
     -- Ein laufender Lauf wird nicht abgebrochen, nur keine weiteren gestartet.
@@ -41,6 +49,8 @@ create or replace package spm_job as
     function job_name return varchar2;
 
     function watchdog_job_name return varchar2;
+
+    function notify_job_name return varchar2;
 
 end spm_job;
 /

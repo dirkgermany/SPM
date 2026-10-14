@@ -129,3 +129,26 @@ exec spm_job.disable_job(spm_job.watchdog_job_name)
 Die Schweige-Regeln (`SPM-POLL-SILENT` usw.) stehen im Rule Set; nach Änderungen an `RULE_*_SEC` in `SPM_CONFIG` `exec spm_rules.publish`. Zustand beider Jobs: `SPM_JOB_STATUS_V` (Spalten `WD_*` für den Watchdog). Details: [rules/README.md](../rules/README.md#watchdog).
 
 SPM benötigt LILAM mit `CHECK_SILENCE` (Branch `messwerte` ab `0026955`); `install/install.sql` prüft das.
+
+## Zustellung von Alerts per E-Mail
+
+1. Netzwerk-ACL (einmalig, als SYS; Host/Port oben im Skript anpassen, Standard `localhost:25`):
+   ```sql
+   @install/01_admin_network_acl.sql
+   ```
+   Eine ACL gilt je Datenbankbenutzer: Eine vorhandene ACL für z. B. `LILAM` genügt für `SPM` nicht.
+2. Absender und Empfänger setzen (ohne sie wird nichts versandt, die Alerts bleiben `PENDING`):
+   ```sql
+   update spm_config set param_value = 'absender@example.org'  where param_name = 'MAIL_FROM';
+   update spm_config set param_value = 'empfaenger@example.org' where param_name = 'MAIL_TO';   -- mehrere durch Komma
+   commit;
+   ```
+   SMTP-Server: `MAIL_SMTP_HOST`, `MAIL_SMTP_PORT`, `MAIL_HELO_DOMAIN` (Standard: lokales Relay ohne TLS).
+3. Zustell-Job:
+   ```sql
+   exec spm_job.create_notify_job                        -- NOTIFY_JOB_NAME, Läufe à 60 min, ausgeschaltet
+   exec spm_job.enable_job(spm_job.notify_job_name)
+   ```
+   Einmalig ohne Job (versendet alle offenen Alerts der Gruppe): `exec dbms_output.put_line(spm_notify.process_pending)`.
+
+Jeder Zustellversuch steht in `SPM_NOTIFICATION`; der Alert erhält in `LILAM_ALERTS` den Status `PROCESSED` bzw. `ERROR` (keine automatische Wiederholung). Nach `exec spm_rules.publish` enthält das Rule Set die Schweige-Regel `SPM-NOTIFY-SILENT` für den Zustell-Job.

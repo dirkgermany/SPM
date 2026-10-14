@@ -68,4 +68,4 @@ Diese Punkte betreffen LILAM selbst. SPM ändert LILAM nicht; die Punkte sind f�
 | 4. Lebenszyklus, Trace, Logging, Fehlerabschluss | umgesetzt in `spm_poll` |
 | 5. Regeln gegen die LILAM-Erweiterung | umgesetzt: `SPM_RULE`, `spm_rules` (Pflege, Generator, Veröffentlichen), technische Regeln, Demo-Rule-Set |
 | 6. Scheduler, Freshness/Watchdog, APEX | Scheduler und Watchdog umgesetzt (`spm_job`, `spm_watchdog`, `SPM_JOB_STATUS_V`, Schweige-Regeln mit `CHECK_SILENCE`); APEX offen |
-| 7. Tests | `test/run_tests.sql` (Mock): 259 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |
+| 7. Tests | `test/run_tests.sql` (Mock): 284 Prüfungen bestanden, siehe [Testbericht](testbericht.md) |

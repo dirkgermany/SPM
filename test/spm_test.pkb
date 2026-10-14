@@ -233,6 +233,7 @@ create or replace package body spm_test as
         end;
         spm_job.drop_job(C_TEST_JOB);
         spm_job.drop_job(C_TEST_WD_JOB);
+        spm_job.drop_job('SPM_TEST_NOTIFY_JOB');
         if g_job_orig is not null then
             update spm_config set param_value = g_job_orig where param_name = 'POLL_JOB_NAME';
         end if;
@@ -777,6 +778,93 @@ create or replace package body spm_test as
         spm_job.drop_job(C_TEST_WD_JOB);
     end t_watchdog;
 
+    function group_status_count(p_group varchar2, p_status varchar2) return number is
+        l_count number;
+    begin
+        select count(*) into l_count from lilam_alerts where group_name = p_group and status = p_status;
+        return l_count;
+    end group_status_count;
+
+    procedure t_notify is
+        l_subject varchar2(400);
+        l_body    clob;
+        l_alert   number;
+        l_pending number;
+        l_count   number;
+        l_pid     number;
+        r         spm_run%rowtype;
+    begin
+        start_case('Zustellung: Mailtext eines Grenzwert-Alerts');
+        select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_rules and rule_id = 'TSTR-MAX';
+        spm_notify.build_message(l_alert, l_subject, l_body);
+        ok(instr(l_subject, 'ERROR TSTR-MAX') > 0, 'Betreff: ' || l_subject);
+        ok(instr(l_body, 'TSTR - Test TSTR') > 0, 'Symbol und Instrument');
+        ok(instr(l_body, '150 EUR') > 0, 'Kurs mit Währung');
+        ok(instr(l_body, '[VAL_MAX 100]') > 0, 'Regel mit Schwelle');
+        ok(instr(l_body, 'SPM_POLL (') > 0, 'Prozess');
+
+        start_case('Zustellung: Mailtext eines Schweige-Alerts ohne Prozess');
+        select max(alert_id) into l_alert from lilam_alerts where group_name = g_group_wd and rule_id = 'SPM-POLL-SILENT';
+        spm_notify.build_message(l_alert, l_subject, l_body);
+        ok(instr(l_body, 'kein Prozess (SPM_POLL nicht gestartet)') > 0, 'kein Prozess');
+        ok(instr(l_body, '[TIME_MAX_SILENCE_SECONDS 3]') > 0, 'Regel mit Schweigezeit');
+
+        start_case('Zustellung: ohne Absender/Empfänger bleiben Alerts offen');
+        set_group(g_group_rules);
+        set_cfg('MAIL_TRANSPORT', 'MOCK');
+        set_cfg('MAIL_FROM', null);
+        set_cfg('MAIL_TO', null);
+        l_pending := group_status_count(g_group_rules, 'PENDING');
+        ok(l_pending > 0, 'offene Alerts vorhanden: ' || l_pending);
+        eq(0, spm_notify.process_pending, 'nichts versandt');
+        eq(l_pending, group_status_count(g_group_rules, 'PENDING'), 'weiterhin offen');
+
+        start_case('Zustellung: MOCK verarbeitet alle offenen Alerts der Gruppe');
+        set_cfg('MAIL_FROM', 'spm-test@example.invalid');
+        set_cfg('MAIL_TO', 'a@example.invalid, b@example.invalid');
+        eq(l_pending, spm_notify.process_pending, 'versandt');
+        eq(0, group_status_count(g_group_rules, 'PENDING'), 'keine offenen Alerts');
+        eq(l_pending, group_status_count(g_group_rules, 'PROCESSED'), 'verarbeitet');
+        select count(*) into l_count from spm_notification n
+        where  n.status = 'SENT' and n.transport = 'MOCK'
+        and    n.alert_id in (select alert_id from lilam_alerts where group_name = g_group_rules);
+        eq(l_pending, l_count, 'protokolliert in SPM_NOTIFICATION');
+        ok(group_status_count(g_group_wd, 'PENDING') > 0, 'Alerts anderer Gruppen unberührt');
+
+        start_case('Zustellung: SMTP-Fehler wird als ERROR verbucht');
+        set_group(g_group_wd);
+        set_cfg('MAIL_TRANSPORT', 'SMTP');
+        set_cfg('MAIL_SMTP_PORT', '1');            -- keine ACL bzw. kein Dienst: Verbindung scheitert
+        l_pending := group_status_count(g_group_wd, 'PENDING');
+        eq(0, spm_notify.process_pending, 'nichts versandt');
+        eq(0, group_status_count(g_group_wd, 'PENDING'), 'keine offenen Alerts');
+        eq(l_pending, group_status_count(g_group_wd, 'ERROR'), 'ERROR');
+        select count(*) into l_count from spm_notification n
+        where  n.status = 'ERROR' and n.error_message is not null
+        and    n.alert_id in (select alert_id from lilam_alerts where group_name = g_group_wd);
+        eq(l_pending, l_count, 'Fehler protokolliert');
+
+        start_case('Zustellung: Consumer-Lauf als LILAM-Prozess');
+        set_group(g_group_rules);
+        set_cfg('MAIL_TRANSPORT', 'MOCK');
+        r := run_test('TSTR');                         -- 150: neuer Alert TSTR-MAX
+        eq(1, alert_count(r.lilam_process_id, 'TSTR-MAX'), 'neuer Alert');
+        spm_notify.run_consumer(p_minutes => 0.05);    -- ca. 3 s
+        eq(0, group_status_count(g_group_rules, 'PENDING'), 'Alert verarbeitet');
+        execute immediate 'select max(id) from ' || tab('_PROC') || ' where process_name = :1'
+            into l_pid using spm_cfg.get_text('NOTIFY_PROCESS_NAME', 'SPM_NOTIFY');
+        eq(spm_poll.C_STATUS_SUCCESS, proc_status(l_pid), 'Prozessstatus');
+        ok(proc_closed(l_pid), 'Prozess geschlossen');
+        eq(1, mon_value(l_pid, 'NOTIFY_RESULT', 'SENT'), 'NOTIFY_RESULT SENT');
+
+        start_case('Zustellung: Job anlegen');
+        spm_job.create_notify_job(p_job_name => 'SPM_TEST_NOTIFY_JOB');
+        select count(*) into l_count from user_scheduler_jobs
+        where  job_name = 'SPM_TEST_NOTIFY_JOB' and enabled = 'FALSE' and repeat_interval = 'FREQ=MINUTELY;INTERVAL=60';
+        eq(1, l_count, 'Job ausgeschaltet, Intervall 60');
+        spm_job.drop_job('SPM_TEST_NOTIFY_JOB');
+    end t_notify;
+
     procedure t_job is
         l_code    number;
         l_status  varchar2(30);
@@ -869,6 +957,7 @@ create or replace package body spm_test as
         begin t_rules;     exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_job;       exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
         begin t_watchdog;  exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
+        begin t_notify;    exception when others then ok(false, 'Ausnahme: ' || sqlerrm || ' ' || dbms_utility.format_error_backtrace); end;
 
         teardown;
         dbms_output.put_line('');

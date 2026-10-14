@@ -2,6 +2,9 @@
 -- SPM: Pakete kompilieren (Reihenfolge nach Abhängigkeit)
 -- =============================================================================
 
+-- Quelltexte enthalten & (HTML-Entities in spm_notify): keine Substitutionsvariablen
+set define off
+
 @@../source/spm_cfg.pks
 @@../source/spm_prov.pks
 @@../source/spm_prov_mock.pks
@@ -21,6 +24,8 @@
 @@../source/spm_job.pkb
 @@../source/spm_watchdog.pkb
 @@../source/spm_notify.pkb
+
+set define on
 
 -- Abbruch, wenn ein SPM-Paket ungültig ist
 declare

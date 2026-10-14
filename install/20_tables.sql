@@ -172,6 +172,18 @@ create table if not exists spm_notification (
 
 create index if not exists spm_notification_alert_ix on spm_notification (alert_id);
 
+-- HTML-Fassung der Mail (BODY = Textfassung)
+declare
+    l_count pls_integer;
+begin
+    select count(*) into l_count from user_tab_columns
+    where  table_name = 'SPM_NOTIFICATION' and column_name = 'BODY_HTML';
+    if l_count = 0 then
+        execute immediate 'alter table spm_notification add (body_html clob)';
+    end if;
+end;
+/
+
 -- Mock-Provider: vorbereitete Antworten je Provider-Symbol, der Reihe nach (SEQ_NO)
 -- abgespielt. Platzhalter im BODY: {NOW}, {NOW-<n>M}, {YESTERDAY_NOON} (UTC, ISO 8601).
 -- HTTP_STATUS 0 simuliert einen Verbindungsfehler (systemisch, z. B. ACL/TLS).

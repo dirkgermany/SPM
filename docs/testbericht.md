@@ -97,3 +97,12 @@ Freigabe durch Dirk; ACL (`install/01_admin_network_acl.sql`), `MAIL_FROM`/`MAIL
 | Aufräumen | `MAILTEST` deaktiviert, Regel entfernt, Rule Set v4 ohne `MAILTEST` |
 
 Neu in den Tests: Sie brechen ab, wenn SPM-Jobs eingeschaltet sind oder laufen (ein laufender Zustell-Job würde die vorübergehend geänderte Konfiguration der Tests lesen und könnte echte Mails an Testadressen schicken).
+
+## 2026-10-14: HTML-Mail
+
+| Schritt | Ergebnis |
+| --- | --- |
+| Erster Installationsversuch | `SPM_NOTIFY` ungültig: SQLcl hielt die HTML-Entities (`&#9650;`, `&middot;`) für Substitutionsvariablen („Ersetzung abgebrochen“), der Body wurde nicht kompiliert. Behoben: `set define off` in `install/30_packages.sql` |
+| `test/run_tests.sql` | 293 bestanden, 0 fehlgeschlagen (neu: Farben je Severity und Abweichung, Überschreitung in Prozent, Regel in Worten, Schweige-Block) |
+| Vorschau | `docs/beispiele/mail_grenzwert.html` (Alert 120, `MAILTEST-MAX`) |
+| Zustell-Job | für Installation und Tests ausgeschaltet, danach wieder eingeschaltet |

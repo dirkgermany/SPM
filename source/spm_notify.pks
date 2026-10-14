@@ -17,8 +17,8 @@ create or replace package spm_notify as
     -- p_pid: LILAM-Prozess für Traces und Logs (NULL = ohne).
     function process_pending(p_pid number default null) return number;
 
-    -- Mailtext eines Alerts (auch für die APEX-Vorschau)
-    procedure build_message(p_alert_id number, o_subject out varchar2, o_body out clob);
+    -- Betreff, Text- und HTML-Fassung eines Alerts (auch für die APEX-Vorschau)
+    procedure build_message(p_alert_id number, o_subject out varchar2, o_body out clob, o_html out clob);
 
 end spm_notify;
 /

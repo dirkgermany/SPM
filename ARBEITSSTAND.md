@@ -14,7 +14,7 @@ SPM (Stock Price Monitoring), Anwendung „SPM Stock Watch“: Referenzanwendung
 
 | PR | Inhalt | Stand |
 | --- | --- | --- |
-| #1–#14 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung, Doku zu Twelve-Data-Symbolen (#8, #9), Historie löschen (#10, #11), Zeitzone als Auswahlliste (#12), Symbole an Links (#13), Schalter Aktiv (#14) | gemergt |
+| #1–#15 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung, Doku zu Twelve-Data-Symbolen (#8, #9), Historie löschen (#10, #11), Zeitzone als Auswahlliste (#12), Symbole an Links (#13), Schalter Aktiv (#14), Arbeitsstand (#15) | gemergt |
 
 Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachziehen, `claude` pushen. `gh` liegt unter `C:\Program Files\GitHub CLI\gh.exe` (angemeldet als dirkgermany).
 
@@ -63,8 +63,9 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
 1. Kein offener PR. Neue Arbeit auf `claude`, PR nach `main` auf Dirks Anweisung.
 2. **Handbuch als PDF**: Text steht (`docs/handbuch/handbuch.md`). Es fehlen breite Bildschirmfotos (das Browser-Fenster ist nur ~800 px breit; Dirk zieht es breiter oder liefert Screenshots; vorhandene schmale Bilder liegen unversioniert in `docs/handbuch/img/`), dann HTML → PDF mit Edge headless (`C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe --headless --print-to-pdf=…`). Python ist nicht installiert.
 3. Entkoppelter LILAM-Modus (Server, Dispatcher) für APEX – später, wenn es ein echtes APEX-Board gibt.
-4. Echte Kurse: Twelve Data ist angebunden (ACL, Schlüssel gesetzt, Live-Abruf geprüft). Gratistarif ohne deutsche Börsen → US-Notierungen in USD (`SAP`, `SIEGY`, `ALIZY`, `BMWKY`, `AAPL`, `MSFT`). Watchlist-Einträge legt Dirk in APEX an (neue Symbole, Mock-Einträge nicht umstellen); danach Regeln anlegen, Abruf-Job einschalten.
+4. Echte Kurse: Twelve Data ist angebunden (ACL, Schlüssel gesetzt, Live-Abruf geprüft). Gratistarif ohne deutsche Börsen → US-Notierungen in USD (`SAP`, `SIEGY`, `ALIZY`, `BMWKY`, `AAPL`, `MSFT`). Watchlist-Einträge legt Dirk in APEX an. AAPL hat er vom Mock auf Twelve Data umgestellt: vor dem Einschalten des Abrufs auf der Seite Instrument „Historie löschen“ (sonst EWMA-Ausreißer durch den Sprung Mock → echt). Danach Regeln anlegen, Abruf-Job einschalten.
 5. Kurzhilfe über Listen: verworfen („zu viel“), stattdessen Handbuch.
+6. **Seiten nach Joblauf auffrischen** – vorerst zurückgestellt (Dirk, 15.10.2026). Push von der DB zum Browser gibt es in APEX nicht. Vorschlag: Anzeigeseiten (Dashboard, Watchlist, Instrument, Alerts, Monitoring, nicht die Formulare) fragen z. B. alle 30 s per Ajax einen Änderungsstempel ab (letzter Lauf, letzter Alert, letzte Zustellung) und frischen nur bei Änderung ihre Regionen auf; Filter bleiben. Nebeneffekt: die APEX-Sitzung läuft nie in den Leerlauf-Timeout.
 
 ## Erkenntnisse
 

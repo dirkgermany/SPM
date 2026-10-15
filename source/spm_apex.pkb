@@ -251,7 +251,9 @@ create or replace package body spm_apex as
                    v.nt_last_job_status, v.nt_last_job_error, v.nt_failure_count)
             || '</table>'
             || '<p style="margin-top:8px;font-size:12px;color:#6b7280;">Abrufintervall '
-            || esc(v.configured_interval_minutes) || ' min. Den Watchdog nur zusammen mit dem Kursabruf einschalten.</p>';
+            || esc(v.configured_interval_minutes) || ' min. Die Überwachung der Jobs (z. B. „kein Abruflauf seit …“,'
+            || ' fehlgeschlagener oder langsamer Lauf) gehört zu den Regeln; geänderte Grenzen gelten erst nach'
+            || ' „Regeln veröffentlichen“.</p>';
         return l_html;
     end job_status_html;
 

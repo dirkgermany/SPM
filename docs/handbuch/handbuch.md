@@ -198,7 +198,7 @@ Steuerung der Anwendung (nur für berechtigte Benutzer).
 
 - **Jobs:** Zustand, nächster Lauf, letzter Lauf und Fehler
 - **Abruf jetzt starten:** ein Abruflauf sofort, unabhängig vom Job
-- **Regeln veröffentlichen:** wie auf der Seite Regeln
+- **Regeln veröffentlichen:** wie auf der Seite Regeln, mit Sicherheitsabfrage. Alle Regeln bilden ein gemeinsames Regelwerk: neben den Kursregeln auch die Überwachung der Jobs (z. B. „kein Abruflauf seit 45 min“). Geänderte Grenzen dieser Überwachung gelten erst nach dem Veröffentlichen; das Abrufintervall wirkt dagegen sofort.
 - **Jobs schalten:** je ein Schalter für Kursabruf, Watchdog und Zustellung; er wirkt sofort, ein fehlender Job wird beim Einschalten angelegt. Den Watchdog nur zusammen mit dem Kursabruf einschalten, sonst meldet er den ausgeschalteten Abruf als Fehler.
 
 ## 4. Gut zu wissen

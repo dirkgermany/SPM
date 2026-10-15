@@ -329,8 +329,8 @@ create or replace package body spm_apex as
         select max(version) into l_before from lilam_rules
         where  upper(group_name) = upper(spm_cfg.get_text('LILAM_GROUP')) and is_active = 1;
         l_after := spm_rules.publish(sys_context('APEX$SESSION', 'APP_USER'));
-        return case when l_after = l_before then 'Rule Set unverändert (Version ' || l_after || ')'
-                    else 'Rule Set Version ' || l_after || ' aktiviert' end;
+        return case when l_after = l_before then 'Regeln unverändert, es gilt weiter Version ' || l_after || '.'
+                    else 'Regeln als Version ' || l_after || ' veröffentlicht, sie gelten ab sofort.' end;
     end publish_rules;
 
 end spm_apex;

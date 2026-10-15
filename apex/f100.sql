@@ -1973,7 +1973,7 @@ wwv_flow_imp_page.create_page(
 );
 wwv_flow_imp_page.create_page_plug(
  p_id=>wwv_flow_imp.id(91000000000070)
-,p_plug_name=>'Rule Set'
+,p_plug_name=>'Regelwerk'
 ,p_region_template_options=>'#DEFAULT#'
 ,p_plug_template=>4072358936313175081
 ,p_plug_display_sequence=>10
@@ -1988,8 +1988,8 @@ wwv_flow_imp_page.create_page_plug(
 ,p_escape_on_http_output=>'Y'
 ,p_plug_template=>4072358936313175081
 ,p_plug_display_sequence=>15
-,p_plug_source=>unistr('<p>SPM erzeugt aus diesen Einstellungen das LILAM Rule Set (Gruppe aus SPM_CONFIG.LILAM_GROUP). <b>Grenzwert</b>: Kurs unter der Unter- bzw. \00FCber der Obergrenze. <b>Ausrei\00DFer</b>: Kurs weicht um mehr als x % vom gleitenden Mittel (EWMA) ab. <b>Schwei')
-||'gen</b>: seit x Sekunden kein neuer Kurs, optional nur in Handelszeiten.</p>'
+,p_plug_source=>unistr('<p>Aus diesen Einstellungen entsteht das Regelwerk; \00C4nderungen gelten erst nach \201ERegeln ver\00F6ffentlichen\201C. <b>Grenzwert</b>: Kurs unter der Unter- bzw. \00FCber der Obergrenze. <b>Ausrei\00DFer</b>: Kurs weicht um mehr als x % vom gleitenden Mittel (EWMA) ab.')
+||' <b>Schweigen</b>: seit x Sekunden kein neuer Kurs, optional nur in Handelszeiten.</p>'
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
   'expand_shortcuts', 'N',
   'output_as', 'HTML')).to_clob
@@ -2465,7 +2465,7 @@ wwv_flow_imp_page.create_page_item(
 ,p_cSize=>30
 ,p_field_template=>1609121967514267634
 ,p_item_template_options=>'#DEFAULT#'
-,p_help_text=>unistr('So viele Kurse bildet LILAM zun\00E4chst den einfachen Mittelwert und meldet keine Ausrei\00DFer. Leer = 3.')
+,p_help_text=>unistr('F\00FCr so viele Kurse wird zun\00E4chst der einfache Mittelwert gebildet; Ausrei\00DFer werden erst danach gemeldet. Leer = 3.')
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
   'number_alignment', 'left',
   'virtual_keyboard', 'decimal')).to_clob

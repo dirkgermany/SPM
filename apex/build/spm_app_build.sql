@@ -1179,10 +1179,10 @@ begin
     --------------------------------------------------------------------------
     spm_apex_builder.page(5, 'Regeln', 'RULES',
         p_help => 'Grenzen, Ausreißer und Schweigen je Aktie. Änderungen wirken erst nach "Regeln veröffentlichen".');
-    r := spm_apex_builder.region_form('Rule Set', 10);
+    r := spm_apex_builder.region_form('Regelwerk', 10);
     spm_apex_builder.item('P5_MSG', r, 10, p_type => 'HIDDEN');
     r2 := spm_apex_builder.region_static('Erläuterung', 15,
-        '<p>SPM erzeugt aus diesen Einstellungen das LILAM Rule Set (Gruppe aus SPM_CONFIG.LILAM_GROUP). '
+        '<p>Aus diesen Einstellungen entsteht das Regelwerk; Änderungen gelten erst nach „Regeln veröffentlichen“. '
      || '<b>Grenzwert</b>: Kurs unter der Unter- bzw. über der Obergrenze. '
      || '<b>Ausreißer</b>: Kurs weicht um mehr als x % vom gleitenden Mittel (EWMA) ab. '
      || '<b>Schweigen</b>: seit x Sekunden kein neuer Kurs, optional nur in Handelszeiten.</p>');
@@ -1236,7 +1236,7 @@ begin
         p_help => 'Alert, wenn der Kurs mehr als so viele Prozent unter dem gleitenden Mittel liegt.');
     -- Zeile: Parameter
     spm_apex_builder.item('P6_EWMA_WARMUP', r, 100, 'Warm-up (Anzahl Kurse)', 'NUMBER',
-        p_help => 'So viele Kurse bildet LILAM zunächst den einfachen Mittelwert und meldet keine Ausreißer. Leer = 3.');
+        p_help => 'Für so viele Kurse wird zunächst der einfache Mittelwert gebildet; Ausreißer werden erst danach gemeldet. Leer = 3.');
     spm_apex_builder.item('P6_EWMA_ALPHA', r, 110, 'Alpha (0 bis 1)', 'NUMBER', p_new_row => false,
         p_help => 'Gewicht des neuesten Kurses im gleitenden Mittel. Klein (0,1) = ruhiges Mittel, groß (0,5) = folgt schnell. Leer = 0,1.');
     spm_apex_builder.item('P6_SILENCE_SECONDS', r, 120, 'Schweigen nach (s)', 'NUMBER', p_new_row => false,

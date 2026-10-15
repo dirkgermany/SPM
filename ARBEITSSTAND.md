@@ -14,7 +14,7 @@ SPM (Stock Price Monitoring), Anwendung „SPM Stock Watch“: Referenzanwendung
 
 | PR | Inhalt | Stand |
 | --- | --- | --- |
-| #1–#16 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung, Doku zu Twelve-Data-Symbolen (#8, #9), Historie löschen (#10, #11), Zeitzone als Auswahlliste (#12), Symbole an Links (#13), Schalter Aktiv (#14), Arbeitsstand (#15), Regeln veröffentlichen in der Administration (#16) | gemergt |
+| #1–#17 | Schema, Mock, Abruflauf, Regeln, Scheduler, Watchdog, Zustellung, HTML-Mail, APEX, Dringlichkeit, Spam-Schutz, Twelve Data, Mail-Überarbeitung, Doku zu Twelve-Data-Symbolen (#8, #9), Historie löschen (#10, #11), Zeitzone als Auswahlliste (#12), Symbole an Links (#13), Schalter Aktiv (#14), Arbeitsstand (#15), Regeln veröffentlichen in der Administration (#16), Regel-Seiten ohne Framework-Begriffe (#17) | gemergt |
 
 Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachziehen, `claude` pushen. `gh` liegt unter `C:\Program Files\GitHub CLI\gh.exe` (angemeldet als dirkgermany).
 
@@ -31,6 +31,7 @@ Nach einem Merge: `main` und `claude` per Fast-Forward auf `origin/main` nachzie
   `export JAVA_HOME='C:\Program Files\Oracle\sqldeveloper\jdk\jre'; echo exit | /c/sqlcl/bin/sql.exe -S -name spm @install/install.sql C:/Users/dirk/Documents/LILAM/lilam`
 - **Vor Installation und Tests den Zustell-Job anhalten** (er belegt `spm_notify` bis zu 60 min; die Tests brechen ab, wenn SPM-Jobs eingeschaltet sind):
   `dbms_scheduler.disable('SPM_NOTIFY_JOB', force => true); dbms_scheduler.stop_job('SPM_NOTIFY_JOB');` – danach `spm_job.enable_job(spm_job.notify_job_name)`.
+  Für Tests muss auch der Kursabruf aus sein (`SPM_POLL_JOB`); den darf ich ohne Rückfrage kurz aus- und danach wieder einschalten (Demo, ein ausgefallener Lauf ist nicht tragisch). Nur Jobs wieder einschalten, die vorher an waren; `spm_job.enable_job` startet den Abruf sofort einmal.
 - Installation: `@install/install.sql <LILAM-Checkout>` (wiederholbar). Tests: `@test/run_tests.sql` (zuletzt **329 bestanden**). Live-Test Twelve Data (kostet Credits): `@test/live_twelvedata.sql "AAPL,SAP"`.
 - APEX-Anwendung ändern: `apex/build/spm_app_build.sql` (im Ordner `apex/build` ausführen), danach Export `apex export -applicationid 100 -skipExportDate -expOriginalIds -overwrite-files` im Ordner `apex` → `apex/f100.sql`. **Nach jedem Neuaufbau muss Dirk sich neu anmelden** – einfach ansagen, keine Umgehung (`set_keep_sessions` führte zu ORA-28817).
 - Browser-Fenster der App: Dirk vorher sagen, wenn ich darin klicke; er soll dann nicht parallel klicken. Strg+Umschalt+B schaltet das Fenster ein/aus.

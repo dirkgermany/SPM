@@ -2217,7 +2217,7 @@ wwv_flow_imp_page.create_page_button(
 ,p_button_is_hot=>'Y'
 ,p_button_image_alt=>unistr('Regeln ver\00F6ffentlichen')
 ,p_button_position=>'NEXT'
-,p_confirm_message=>'Rule Set erzeugen und in LILAM aktivieren?'
+,p_confirm_message=>unistr('Regeln ver\00F6ffentlichen? Die aktuelle Fassung gilt dann sofort f\00FCr alle weiteren Abrufe.')
 ,p_confirm_style=>'warning'
 );
 wwv_flow_imp_page.create_page_item(
@@ -3585,8 +3585,11 @@ wwv_flow_imp_page.create_page_button(
 ,p_button_action=>'SUBMIT'
 ,p_button_template_options=>'#DEFAULT#'
 ,p_button_template_id=>4072362960822175091
+,p_button_is_hot=>'Y'
 ,p_button_image_alt=>unistr('Regeln ver\00F6ffentlichen')
 ,p_button_position=>'NEXT'
+,p_confirm_message=>unistr('Regeln ver\00F6ffentlichen? Die aktuelle Fassung gilt dann sofort f\00FCr alle weiteren Abrufe.')
+,p_confirm_style=>'warning'
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(91000000000186)

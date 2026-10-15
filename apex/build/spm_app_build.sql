@@ -1187,7 +1187,7 @@ begin
      || '<b>Ausreißer</b>: Kurs weicht um mehr als x % vom gleitenden Mittel (EWMA) ab. '
      || '<b>Schweigen</b>: seit x Sekunden kein neuer Kurs, optional nur in Handelszeiten.</p>');
     btn := spm_apex_builder.button('PUBLISH', 'Regeln veröffentlichen', r, 10, p_hot => true,
-        p_confirm => 'Rule Set erzeugen und in LILAM aktivieren?');
+        p_confirm => 'Regeln veröffentlichen? Die aktuelle Fassung gilt dann sofort für alle weiteren Abrufe.');
     spm_apex_builder.process('Veröffentlichen', 10, ':P5_MSG := spm_apex.publish_rules;',
         p_button => btn, p_success => '&P5_MSG.');
     r := spm_apex_builder.ir('Regeln je Symbol', 20,
@@ -1401,7 +1401,8 @@ begin
     spm_apex_builder.item('P10_MSG', r, 5, p_type => 'HIDDEN');
     btn := spm_apex_builder.button('RUN_NOW', 'Abruf jetzt starten', r, 10, p_hot => true, p_icon => 'fa-play');
     spm_apex_builder.process('Abruf', 10, ':P10_MSG := spm_apex.run_poll_now;', p_button => btn, p_success => '&P10_MSG.');
-    btn := spm_apex_builder.button('PUBLISH', 'Regeln veröffentlichen', r, 20);
+    btn := spm_apex_builder.button('PUBLISH', 'Regeln veröffentlichen', r, 20, p_hot => true,
+        p_confirm => 'Regeln veröffentlichen? Die aktuelle Fassung gilt dann sofort für alle weiteren Abrufe.');
     spm_apex_builder.process('Regeln', 20, ':P10_MSG := spm_apex.publish_rules;', p_button => btn, p_success => '&P10_MSG.');
 
     -- Schalter wirken sofort (Dynamic Action), danach wird die Job-Tabelle aufgefrischt
